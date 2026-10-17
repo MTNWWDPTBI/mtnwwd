@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#181A2F"/>
+      <stop offset="50%" stop-color="#242E49"/>
+      <stop offset="100%" stop-color="#37415C"/>
+    </linearGradient>
+    <linearGradient id="coral2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDA481"/>
+      <stop offset="100%" stop-color="#B4182D"/>
+    </linearGradient>
+    <filter id="glow2" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <rect width="400" height="240" rx="16" fill="url(#bg2)"/>
+  
+  <!-- Circuit Grid -->
+  <g opacity="0.08" stroke="#FDA481" stroke-width="1.5">
+    <path d="M 0 50 H 120 L 150 80 H 400"/>
+    <path d="M 0 120 H 400"/>
+    <path d="M 0 190 H 250 L 280 220 H 400"/>
+    <circle cx="120" cy="50" r="4" fill="#FDA481"/>
+    <circle cx="250" cy="190" r="4" fill="#B4182D"/>
+  </g>
+
+  <!-- Industrial High-Torque Motor Housing -->
+  <rect x="70" y="90" width="105" height="90" rx="10" fill="#242E49" stroke="#37415C" stroke-width="3"/>
+  <!-- Motor Cooling Fins -->
+  <line x1="85" y1="95" x2="85" y2="175" stroke="#37415C" stroke-width="3"/>
+  <line x1="97" y1="95" x2="97" y2="175" stroke="#37415C" stroke-width="3"/>
+  <line x1="109" y1="95" x2="109" y2="175" stroke="#37415C" stroke-width="3"/>
+  <line x1="121" y1="95" x2="121" y2="175" stroke="#37415C" stroke-width="3"/>
+  <line x1="133" y1="95" x2="133" y2="175" stroke="#37415C" stroke-width="3"/>
+  <line x1="145" y1="95" x2="145" y2="175" stroke="#37415C" stroke-width="3"/>
+  <line x1="157" y1="95" x2="157" y2="175" stroke="#37415C" stroke-width="3"/>
+
+  <!-- Drive Shaft & Main Motor Pulley -->
+  <rect x="175" y="125" width="25" height="20" fill="#37415C"/>
+  <circle cx="210" cy="135" r="24" fill="#181A2F" stroke="#FDA481" stroke-width="3"/>
+  <circle cx="210" cy="135" r="8" fill="#B4182D"/>
+
+  <!-- Driven Secondary Pulley -->
+  <circle cx="310" cy="105" r="38" fill="#181A2F" stroke="#37415C" stroke-width="4"/>
+  <circle cx="310" cy="105" r="22" fill="#242E49" stroke="url(#coral2)" stroke-width="3"/>
+  <circle cx="310" cy="105" r="8" fill="#FDA481"/>
+
+  <!-- High Tension Timing Belt -->
+  <path d="M 210 111 L 310 67 Q 348 105, 310 143 L 210 159 Q 186 135, 210 111" fill="none" stroke="#FDA481" stroke-width="3.5" filter="url(#glow2)"/>
+
+  <!-- Electric Terminal Box -->
+  <rect x="95" y="66" width="55" height="26" rx="4" fill="#54162B" stroke="#B4182D" stroke-width="2"/>
+  <circle cx="110" cy="79" r="3" fill="#FDA481"/>
+  <circle cx="125" cy="79" r="3" fill="#FDA481"/>
+  <circle cx="140" cy="79" r="3" fill="#B4182D"/>
+
+  <!-- Heavy Base Frame -->
+  <rect x="50" y="180" width="300" height="24" rx="6" fill="#37415C"/>
+  <rect x="40" y="200" width="320" height="12" rx="4" fill="#242E49" stroke="#37415C"/>
+
+  <text x="30" y="32" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#FDA481" letter-spacing="1.5">NDE-MOT DRIVE SYSTEM</text>
+  <rect x="30" y="40" width="70" height="4" rx="2" fill="#FDA481"/>
+</svg>

@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#242E49"/>
+      <stop offset="50%" stop-color="#181A2F"/>
+      <stop offset="100%" stop-color="#54162B"/>
+    </linearGradient>
+    <linearGradient id="coral1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDA481"/>
+      <stop offset="100%" stop-color="#B4182D"/>
+    </linearGradient>
+    <linearGradient id="metal1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4B5875"/>
+      <stop offset="100%" stop-color="#242E49"/>
+    </linearGradient>
+    <filter id="glow1" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Base Background -->
+  <rect width="400" height="240" rx="16" fill="url(#bg1)"/>
+  
+  <!-- Grid Lines -->
+  <g opacity="0.1" stroke="#FDA481" stroke-width="1">
+    <line x1="0" y1="40" x2="400" y2="40"/>
+    <line x1="0" y1="80" x2="400" y2="80"/>
+    <line x1="0" y1="120" x2="400" y2="120"/>
+    <line x1="0" y1="160" x2="400" y2="160"/>
+    <line x1="0" y1="200" x2="400" y2="200"/>
+    <line x1="80" y1="0" x2="80" y2="240"/>
+    <line x1="160" y1="0" x2="160" y2="240"/>
+    <line x1="240" y1="0" x2="240" y2="240"/>
+    <line x1="320" y1="0" x2="320" y2="240"/>
+  </g>
+  
+  <!-- Machine Base Pedestal -->
+  <rect x="60" y="175" width="280" height="30" rx="6" fill="#37415C" stroke="#242E49" stroke-width="2"/>
+  <rect x="80" y="165" width="240" height="12" rx="3" fill="#242E49"/>
+  <circle cx="100" cy="190" r="4" fill="#FDA481"/>
+  <circle cx="300" cy="190" r="4" fill="#B4182D"/>
+  
+  <!-- Machine Upright Pillars -->
+  <rect x="90" y="65" width="24" height="100" rx="4" fill="url(#metal1)" stroke="#37415C"/>
+  <rect x="286" y="65" width="24" height="100" rx="4" fill="url(#metal1)" stroke="#37415C"/>
+  
+  <!-- Overhead Gantry Beam -->
+  <rect x="80" y="55" width="240" height="18" rx="4" fill="#37415C" stroke="#FDA481" stroke-width="1"/>
+  <line x1="85" y1="64" x2="315" y2="64" stroke="#FDA481" stroke-width="2" stroke-dasharray="8 4"/>
+
+  <!-- Left Reel / Takeup Spool -->
+  <circle cx="145" cy="120" r="42" fill="#242E49" stroke="#37415C" stroke-width="4"/>
+  <circle cx="145" cy="120" r="28" fill="#181A2F" stroke="url(#coral1)" stroke-width="3"/>
+  <circle cx="145" cy="120" r="10" fill="#FDA481"/>
+  <!-- Spool Spokes -->
+  <line x1="145" y1="92" x2="145" y2="148" stroke="#37415C" stroke-width="3"/>
+  <line x1="117" y1="120" x2="173" y2="120" stroke="#37415C" stroke-width="3"/>
+
+  <!-- Right Spool / Feed Reel -->
+  <circle cx="255" cy="120" r="32" fill="#242E49" stroke="#37415C" stroke-width="3"/>
+  <circle cx="255" cy="120" r="18" fill="#181A2F" stroke="#B4182D" stroke-width="2"/>
+  <circle cx="255" cy="120" r="6" fill="#B4182D"/>
+
+  <!-- Tension Wire & Guide Pulleys -->
+  <path d="M 145 92 Q 200 70, 255 102" fill="none" stroke="#FDA481" stroke-width="2.5" filter="url(#glow1)"/>
+  <circle cx="200" cy="78" r="8" fill="#37415C" stroke="#FDA481" stroke-width="2"/>
+  <circle cx="200" cy="78" r="3" fill="#FDA481"/>
+
+  <!-- Laser Sensor / Optical Scanner -->
+  <rect x="190" y="88" width="20" height="14" rx="3" fill="#B4182D"/>
+  <line x1="200" y1="102" x2="200" y2="155" stroke="#B4182D" stroke-width="2" stroke-dasharray="3 3" filter="url(#glow1)"/>
+
+  <!-- Machine Badge & Indicator Light -->
+  <circle cx="340" cy="30" r="5" fill="#FDA481" filter="url(#glow1)"/>
+  <text x="30" y="32" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#FDA481" letter-spacing="1.5">NDE PRECISION UNIT</text>
+  <rect x="30" y="40" width="55" height="4" rx="2" fill="#B4182D"/>
+</svg>

@@ -22,10 +22,20 @@ class MachineController extends Controller
     {
         $request->validate([
             'machine_code' => 'required|unique:machines,machine_code',
-            'machine_name' => 'required'
+            'machine_name' => 'required',
+            'image'        => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:5120'
         ]);
 
-        Machine::create($request->all());
+        $data = $request->only(['machine_code', 'machine_name']);
+
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '', $file->getClientOriginalName());
+            $file->move(public_path('images/machines/uploads'), $filename);
+            $data['image'] = 'images/machines/uploads/' . $filename;
+        }
+
+        Machine::create($data);
         return redirect()->route('machines.index')->with('success', 'Mesin berhasil ditambahkan.');
     }
 
@@ -38,10 +48,20 @@ class MachineController extends Controller
     {
         $request->validate([
             'machine_code' => 'required|unique:machines,machine_code,' . $machine->id,
-            'machine_name' => 'required'
+            'machine_name' => 'required',
+            'image'        => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:5120'
         ]);
 
-        $machine->update($request->all());
+        $data = $request->only(['machine_code', 'machine_name']);
+
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '', $file->getClientOriginalName());
+            $file->move(public_path('images/machines/uploads'), $filename);
+            $data['image'] = 'images/machines/uploads/' . $filename;
+        }
+
+        $machine->update($data);
         return redirect()->route('machines.index')->with('success', 'Data mesin berhasil diperbarui.');
     }
 
@@ -51,7 +71,6 @@ class MachineController extends Controller
             $machine->delete();
             return redirect()->route('machines.index')->with('success', 'Mesin berhasil dihapus.');
         } catch (\Exception $e) {
-            // Error ini akan muncul jika mesin sedang dipakai di tabel Assembly/Sparepart
             return redirect()->route('machines.index')->withErrors(['error' => 'Gagal menghapus! Mesin ini masih memiliki data Assembly/Sparepart yang terhubung.']);
         }
     }

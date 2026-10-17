@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg8" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#54162B"/>
+      <stop offset="40%" stop-color="#181A2F"/>
+      <stop offset="100%" stop-color="#242E49"/>
+    </linearGradient>
+    <linearGradient id="fire" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#B4182D"/>
+      <stop offset="60%" stop-color="#FDA481"/>
+      <stop offset="100%" stop-color="#FFF2E2"/>
+    </linearGradient>
+    <filter id="glow8">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <rect width="400" height="240" rx="16" fill="url(#bg8)"/>
+
+  <!-- Cylindrical Furnace Shell -->
+  <rect x="120" y="55" width="160" height="130" rx="14" fill="#242E49" stroke="#37415C" stroke-width="3"/>
+
+  <!-- Induction Heating Coils -->
+  <path d="M 140 75 Q 200 65, 260 75" fill="none" stroke="#FDA481" stroke-width="4" filter="url(#glow8)"/>
+  <path d="M 140 95 Q 200 85, 260 95" fill="none" stroke="#B4182D" stroke-width="4" filter="url(#glow8)"/>
+  <path d="M 140 115 Q 200 105, 260 115" fill="none" stroke="#FDA481" stroke-width="4" filter="url(#glow8)"/>
+  <path d="M 140 135 Q 200 125, 260 135" fill="none" stroke="#B4182D" stroke-width="4" filter="url(#glow8)"/>
+  <path d="M 140 155 Q 200 145, 260 155" fill="none" stroke="#FDA481" stroke-width="4" filter="url(#glow8)"/>
+
+  <!-- Core Heated Rod / Crucible -->
+  <rect x="185" y="65" width="30" height="110" rx="5" fill="url(#fire)" filter="url(#glow8)"/>
+
+  <!-- Digital Temperature Display Panel -->
+  <rect x="295" y="85" width="60" height="40" rx="4" fill="#181A2F" stroke="#FDA481" stroke-width="1.5"/>
+  <text x="302" y="102" font-family="monospace" font-size="10" font-weight="700" fill="#FDA481">TEMP °C</text>
+  <text x="302" y="118" font-family="monospace" font-size="13" font-weight="700" fill="#B4182D">850°</text>
+
+  <!-- Heavy Thermal Base -->
+  <rect x="80" y="185" width="240" height="25" rx="6" fill="#37415C"/>
+
+  <text x="30" y="32" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#FDA481" letter-spacing="1.5">HTR INDUCTION FURNACE</text>
+  <rect x="30" y="40" width="70" height="4" rx="2" fill="#B4182D"/>
+</svg>

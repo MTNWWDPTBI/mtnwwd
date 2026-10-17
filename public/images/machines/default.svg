@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgdef" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#242E49"/>
+      <stop offset="50%" stop-color="#181A2F"/>
+      <stop offset="100%" stop-color="#54162B"/>
+    </linearGradient>
+    <filter id="glowdef">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <rect width="400" height="240" rx="16" fill="url(#bgdef)"/>
+
+  <!-- Industrial Machine Enclosure -->
+  <rect x="75" y="60" width="250" height="125" rx="8" fill="#242E49" stroke="#37415C" stroke-width="2"/>
+  <rect x="90" y="75" width="220" height="75" rx="4" fill="#181A2F"/>
+
+  <!-- Multi-axis CNC Spindle -->
+  <circle cx="160" cy="112" r="28" fill="#37415C" stroke="#FDA481" stroke-width="2"/>
+  <circle cx="160" cy="112" r="10" fill="#B4182D" filter="url(#glowdef)"/>
+  
+  <!-- Robot Arm Linkage -->
+  <path d="M 235 135 L 260 90 L 290 100" fill="none" stroke="#FDA481" stroke-width="4" filter="url(#glowdef)"/>
+  <circle cx="235" cy="135" r="5" fill="#B4182D"/>
+  <circle cx="260" cy="90" r="5" fill="#FDA481"/>
+  <circle cx="290" cy="100" r="4" fill="#B4182D"/>
+
+  <!-- Machine Base -->
+  <rect x="55" y="185" width="290" height="25" rx="6" fill="#37415C"/>
+
+  <text x="30" y="32" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#FDA481" letter-spacing="1.5">INDUSTRIAL UNIT</text>
+  <rect x="30" y="40" width="60" height="4" rx="2" fill="#B4182D"/>
+</svg>

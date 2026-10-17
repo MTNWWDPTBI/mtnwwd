@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#242E49"/>
+      <stop offset="60%" stop-color="#181A2F"/>
+      <stop offset="100%" stop-color="#37415C"/>
+    </linearGradient>
+    <linearGradient id="blade" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FDA481"/>
+      <stop offset="50%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#FDA481"/>
+    </linearGradient>
+    <filter id="glow3">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <rect width="400" height="240" rx="16" fill="url(#bg3)"/>
+
+  <!-- Heavy C-Frame Structure -->
+  <path d="M 90 50 H 310 V 85 H 250 V 150 H 310 V 195 H 90 Z" fill="#242E49" stroke="#37415C" stroke-width="3"/>
+  <rect x="70" y="195" width="260" height="25" rx="6" fill="#37415C"/>
+
+  <!-- Hydraulic Cylinder & Piston -->
+  <rect x="155" y="45" width="60" height="55" rx="6" fill="#54162B" stroke="#B4182D" stroke-width="2"/>
+  <rect x="175" y="100" width="20" height="35" fill="url(#blade)" filter="url(#glow3)"/>
+
+  <!-- Upper Shear Tool / Die -->
+  <path d="M 140 135 L 230 135 L 215 152 L 155 152 Z" fill="#B4182D" stroke="#FDA481" stroke-width="2"/>
+
+  <!-- Lower Anvil Bed -->
+  <rect x="130" y="165" width="110" height="20" rx="3" fill="#37415C" stroke="#242E49"/>
+  <line x1="120" y1="165" x2="250" y2="165" stroke="#FDA481" stroke-width="3"/>
+
+  <!-- Pressure Dial Gauge -->
+  <circle cx="280" cy="115" r="20" fill="#181A2F" stroke="#FDA481" stroke-width="2"/>
+  <circle cx="280" cy="115" r="4" fill="#B4182D"/>
+  <line x1="280" y1="115" x2="292" y2="107" stroke="#FDA481" stroke-width="2"/>
+  <line x1="280" y1="99" x2="280" y2="103" stroke="#FDA481" stroke-width="1.5"/>
+  <line x1="296" y1="115" x2="292" y2="115" stroke="#FDA481" stroke-width="1.5"/>
+
+  <!-- Hydraulic Pipe Line -->
+  <path d="M 215 70 H 280 V 95" fill="none" stroke="#FDA481" stroke-width="3"/>
+
+  <text x="30" y="32" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#FDA481" letter-spacing="1.5">SHX SHEARING MODULE</text>
+  <rect x="30" y="40" width="60" height="4" rx="2" fill="#B4182D"/>
+</svg>

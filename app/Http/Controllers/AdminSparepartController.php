@@ -11,7 +11,7 @@ class AdminSparepartController extends Controller
 {
     public function index(Request $request)
     {
-        $spareparts = Sparepart::with(['inventory', 'assemblies.machine'])->paginate(10);
+        $spareparts = Sparepart::with(['assemblies.machine'])->paginate(10);
         return view('admin.spareparts.index', compact('spareparts'));
     }
 
@@ -32,15 +32,10 @@ class AdminSparepartController extends Controller
 
         // Simpan Sparepart
         $sparepart = Sparepart::create([
+            'part_id' => $request->part_id ?? ('SP' . (Sparepart::max('id') + 1)),
             'sap_code' => $request->sap_code,
             'part_name' => $request->part_name,
-        ]);
-
-        // Simpan Lokasi Inventory
-        Inventory::create([
-            'sparepart_id' => $sparepart->id,
             'bin_location' => $request->bin_location,
-            'stock' => 0
         ]);
 
         // Hubungkan ke Assembly (BOM)
@@ -49,12 +44,12 @@ class AdminSparepartController extends Controller
             'unit' => $request->unit ?? 'Pcs'
         ]);
 
-        return redirect()->route('admin.spareparts.index')->with('success', 'Master Sparepart berhasil ditambahkan.');
+        return redirect()->route('spareparts.index')->with('success', 'Master Sparepart berhasil ditambahkan.');
     }
 
     public function edit(Sparepart $sparepart)
     {
-        $sparepart->load(['inventory', 'assemblies']);
+        $sparepart->load(['assemblies']);
         $assemblies = Assembly::with('machine')->get();
         return view('admin.spareparts.edit', compact('sparepart', 'assemblies'));
     }
@@ -71,13 +66,8 @@ class AdminSparepartController extends Controller
         $sparepart->update([
             'sap_code' => $request->sap_code,
             'part_name' => $request->part_name,
+            'bin_location' => $request->bin_location,
         ]);
-
-        // Update Inventory Lokasi Bin
-        Inventory::updateOrCreate(
-            ['sparepart_id' => $sparepart->id],
-            ['bin_location' => $request->bin_location]
-        );
 
         // Update relasi Assembly
         $sparepart->assemblies()->sync([
@@ -87,15 +77,17 @@ class AdminSparepartController extends Controller
             ]
         ]);
 
-        return redirect()->route('admin.spareparts.index')->with('success', 'Master Sparepart berhasil diperbarui.');
+        return redirect()->route('spareparts.index')->with('success', 'Master Sparepart berhasil diperbarui.');
     }
 
     public function destroy(Sparepart $sparepart)
     {
-        $sparepart->inventory()->delete();
+        if ($sparepart->inventory) {
+            $sparepart->inventory->delete();
+        }
         $sparepart->assemblies()->detach();
         $sparepart->delete();
 
-        return redirect()->route('admin.spareparts.index')->with('success', 'Master Sparepart berhasil dihapus.');
+        return redirect()->route('spareparts.index')->with('success', 'Master Sparepart berhasil dihapus.');
     }
 }

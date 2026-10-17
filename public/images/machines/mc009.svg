@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg9" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#181A2F"/>
+      <stop offset="50%" stop-color="#242E49"/>
+      <stop offset="100%" stop-color="#37415C"/>
+    </linearGradient>
+    <filter id="glow9">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <rect width="400" height="240" rx="16" fill="url(#bg9)"/>
+
+  <!-- High Precision Cartesian Gantry Framework -->
+  <rect x="70" y="65" width="260" height="18" rx="4" fill="#37415C" stroke="#FDA481" stroke-width="1.5"/>
+  <rect x="75" y="83" width="18" height="100" rx="3" fill="#242E49"/>
+  <rect x="307" y="83" width="18" height="100" rx="3" fill="#242E49"/>
+
+  <!-- X-Y Moving Dispenser Carriage -->
+  <rect x="170" y="75" width="60" height="40" rx="6" fill="#242E49" stroke="#37415C" stroke-width="2"/>
+
+  <!-- Pneumatic Syringe Barrel -->
+  <rect x="190" y="115" width="20" height="40" rx="3" fill="#54162B" stroke="#B4182D" stroke-width="1.5"/>
+  <polygon points="190,155 210,155 200,172" fill="#FDA481" filter="url(#glow9)"/>
+
+  <!-- Dispensed Micro-Droplets -->
+  <circle cx="200" cy="180" r="3" fill="#FDA481" filter="url(#glow9)"/>
+
+  <!-- Work Stage with Target PCB Matrix -->
+  <rect x="120" y="185" width="160" height="12" rx="2" fill="#181A2F" stroke="#FDA481" stroke-width="1"/>
+  <circle cx="150" cy="191" r="2" fill="#FDA481"/>
+  <circle cx="175" cy="191" r="2" fill="#FDA481"/>
+  <circle cx="200" cy="191" r="2" fill="#B4182D"/>
+  <circle cx="225" cy="191" r="2" fill="#FDA481"/>
+  <circle cx="250" cy="191" r="2" fill="#FDA481"/>
+
+  <!-- Machine Base Structure -->
+  <rect x="55" y="195" width="290" height="20" rx="5" fill="#37415C"/>
+
+  <text x="30" y="32" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#FDA481" letter-spacing="1.5">ADP DISPENSER UNIT</text>
+  <rect x="30" y="40" width="60" height="4" rx="2" fill="#B4182D"/>
+</svg>

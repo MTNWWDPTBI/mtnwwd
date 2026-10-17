@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#181A2F"/>
+      <stop offset="50%" stop-color="#54162B"/>
+      <stop offset="100%" stop-color="#242E49"/>
+    </linearGradient>
+    <filter id="glow4">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <rect width="400" height="240" rx="16" fill="url(#bg4)"/>
+
+  <!-- High-Precision Dual Column Gantry -->
+  <rect x="75" y="70" width="22" height="120" rx="4" fill="#37415C"/>
+  <rect x="303" y="70" width="22" height="120" rx="4" fill="#37415C"/>
+  <rect x="65" y="55" width="270" height="22" rx="4" fill="#242E49" stroke="#37415C" stroke-width="2"/>
+
+  <!-- Precision Ball-Screw Horizontal Rail -->
+  <line x1="97" y1="66" x2="303" y2="66" stroke="#FDA481" stroke-width="3" stroke-dasharray="6 3"/>
+
+  <!-- Automated Bonding Head Carriage -->
+  <rect x="160" y="60" width="80" height="45" rx="6" fill="#37415C" stroke="#FDA481" stroke-width="2"/>
+  <circle cx="178" cy="82" r="5" fill="#FDA481"/>
+  <circle cx="222" cy="82" r="5" fill="#B4182D"/>
+
+  <!-- Dual Thermo-Bonding Tips -->
+  <rect x="185" y="105" width="12" height="30" fill="#242E49" stroke="#37415C"/>
+  <polygon points="185,135 197,135 191,155" fill="#FDA481" filter="url(#glow4)"/>
+  <rect x="203" y="105" width="12" height="30" fill="#242E49" stroke="#37415C"/>
+  <polygon points="203,135 215,135 209,155" fill="#FDA481" filter="url(#glow4)"/>
+
+  <!-- Workpiece Clamping Fixture -->
+  <rect x="130" y="160" width="140" height="20" rx="3" fill="#242E49" stroke="#B4182D" stroke-width="2"/>
+  <rect x="145" y="153" width="110" height="7" rx="2" fill="#54162B"/>
+
+  <!-- Base Table -->
+  <rect x="55" y="190" width="290" height="25" rx="5" fill="#37415C"/>
+  <line x1="80" y1="202" x2="320" y2="202" stroke="#FDA481" stroke-width="2" opacity="0.6"/>
+
+  <text x="30" y="32" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#FDA481" letter-spacing="1.5">NDB ONO BONDER</text>
+  <rect x="30" y="40" width="65" height="4" rx="2" fill="#B4182D"/>
+</svg>

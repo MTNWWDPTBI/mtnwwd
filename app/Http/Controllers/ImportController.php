@@ -9,7 +9,6 @@ use App\Models\Machine;
 use App\Models\Assembly;
 use App\Models\Sparepart;
 use App\Models\AssemblySparepart;
-use App\Models\Inventory;
 
 class ImportController extends Controller
 {
@@ -65,9 +64,14 @@ class ImportController extends Controller
                 $rows = $sparepartSheet->toArray(null, true, true, true);
                 foreach ($rows as $index => $row) {
                     if ($index == 1 || empty($row['A'])) continue;
+                    
                     Sparepart::updateOrCreate(
-                        ['part_id' => $row['A']],
-                        ['sap_code' => $row['B'], 'part_name' => $row['C']]
+                        ['part_id' => trim($row['A'])], // Gunakan trim agar kebal spasi
+                        [
+                            'sap_code' => trim($row['B']), 
+                            'part_name' => trim($row['C']),
+                            'bin_location' => isset($row['D']) ? trim($row['D']) : null // Gunakan trim
+                        ]
                     );
                 }
             }
@@ -78,6 +82,9 @@ class ImportController extends Controller
                 $rows = $bomSheet->toArray(null, true, true, true);
                 foreach ($rows as $index => $row) {
                     if ($index == 1 || empty($row['A']) || empty($row['D'])) continue;
+                    // GUNAKAN trim() UNTUK MEMBERSIHKAN SPASI TERSEMBUNYI
+                    $assemblyCode = trim($row['A']);
+                    $partId = trim($row['D']);
                     $assembly = Assembly::where('assembly_code', $row['A'])->first();
                     $sparepart = Sparepart::where('part_id', $row['D'])->first();
 
@@ -90,20 +97,7 @@ class ImportController extends Controller
                 }
             }
 
-            // 5. Import Sheet: Inventory
-            $inventorySheet = $spreadsheet->getSheetByName('Inventory');
-            if ($inventorySheet) {
-                $rows = $inventorySheet->toArray(null, true, true, true);
-                foreach ($rows as $index => $row) {
-                    if ($index == 1 || empty($row['B'])) continue;
-                    $sparepart = Sparepart::where('part_id', $row['B'])->first();
-                    if ($sparepart) {
-                        Inventory::updateOrCreate(
-                            ['sparepart_id' => $sparepart->id, 'bin_location' => $row['C']]
-                        );
-                    }
-                }
-            }
+            // Catatan: Sheet 'Inventory' sudah ditiadakan karena Bin sudah digabung ke Sparepart_Master.
 
             // Jika semua lancar, simpan ke database permanen
             DB::commit();

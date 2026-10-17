@@ -1,3 +1,63 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    body {
+        background-color: #181A2F;
+        color: #F1F5F9;
+        font-family: 'Figtree', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+}
+
+/* Material Design 3 Surface & Glow */
+.m3-surface {
+    background-color: #242E49;
+    border: 1px solid rgba(55, 65, 92, 0.7);
+    border-radius: 20px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.m3-surface:hover {
+    border-color: rgba(253, 164, 129, 0.6);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.5), 0 0 20px -2px rgba(253, 164, 129, 0.25);
+}
+
+.m3-gradient-banner {
+    background: linear-gradient(135deg, #181A2F 0%, #242E49 50%, #54162B 85%, #B4182D 100%);
+}
+
+.m3-badge-peach {
+    background: rgba(253, 164, 129, 0.15);
+    color: #FDA481;
+    border: 1px solid rgba(253, 164, 129, 0.35);
+}
+
+.m3-badge-crimson {
+    background: rgba(180, 24, 45, 0.25);
+    color: #FFC0AA;
+    border: 1px solid rgba(180, 24, 45, 0.6);
+}
+
+.m3-badge-slate {
+    background: rgba(55, 65, 92, 0.5);
+    color: #CBD5E1;
+    border: 1px solid rgba(55, 65, 92, 0.8);
+}
+
+/* Custom Modern Dark Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #181A2F;
+}
+::-webkit-scrollbar-thumb {
+    background: #37415C;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #FDA481;
+}
