@@ -20,10 +20,10 @@
                 </div>
                 <div>
                     <div class="text-lg font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-[#FDA481] to-[#B4182D]">
-                        MAINTENANCE
+                        MTN WWD
                     </div>
                     <div class="text-[10px] tracking-widest uppercase font-semibold text-slate-400">
-                        WWD SYSTEM
+                        Bekaert Indonesia
                     </div>
                 </div>
             </a>
@@ -48,7 +48,7 @@
                 <svg class="w-5 h-5 {{ request()->routeIs('dashboard') ? 'text-[#FDA481]' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                 </svg>
-                <span>Dashboard & Mesin</span>
+                <span>Dashboard</span>
             </a>
 
             <!-- 2. Katalog Sparepart -->
@@ -57,7 +57,25 @@
                 <svg class="w-5 h-5 {{ request()->routeIs('sparepart.*') ? 'text-[#FDA481]' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
                 </svg>
-                <span>Katalog Suku Cadang</span>
+                <span>Katalog Sparepart</span>
+            </a>
+
+            <!-- 3. Stock TPM -->
+            <a href="{{ route('tpm.index') }}" 
+                class="flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition duration-200 {{ request()->routeIs('tpm.*') ? 'bg-[#242E49] text-[#FDA481] border-l-4 border-[#B4182D] shadow-sm' : 'text-slate-300 hover:bg-[#242E49]/60 hover:text-white' }}">
+                <svg class="w-5 h-5 {{ request()->routeIs('tpm.*') ? 'text-[#FDA481]' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                </svg>
+                <span>TPM</span>
+            </a>
+
+            <!-- 4. Shift Handover -->
+            <a href="{{ route('handover.index') }}" 
+            class="flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition duration-200 {{ request()->routeIs('handover.*') ? 'bg-[#242E49] text-[#FDA481] border-l-4 border-[#B4182D] shadow-sm' : 'text-slate-300 hover:bg-[#242E49]/60 hover:text-white' }}">
+                <svg class="w-5 h-5 {{ request()->routeIs('handover.*') ? 'text-[#FDA481]' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                </svg>
+                <span>Shift Handover</span>
             </a>
 
             <!-- Group: Master Data & Admin -->
@@ -66,6 +84,7 @@
             </div>
 
             <!-- 3. Master Mesin -->
+            @if(auth()->user()->role === 'admin')
             <a href="{{ route('machines.index') }}" 
                class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl transition duration-200 {{ request()->routeIs('machines.*') ? 'bg-[#242E49] text-[#FDA481] border-l-4 border-[#B4182D]' : 'text-slate-300 hover:bg-[#242E49]/60 hover:text-white' }}">
                 <svg class="w-4 h-4 {{ request()->routeIs('machines.*') ? 'text-[#FDA481]' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -73,17 +92,21 @@
                 </svg>
                 <span>Data Mesin</span>
             </a>
+            @endif
 
             <!-- 4. Master Assembly -->
+            @if(auth()->user()->role === 'admin')
             <a href="{{ route('assemblies.index') }}" 
                class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl transition duration-200 {{ request()->routeIs('assemblies.*') ? 'bg-[#242E49] text-[#FDA481] border-l-4 border-[#B4182D]' : 'text-slate-300 hover:bg-[#242E49]/60 hover:text-white' }}">
                 <svg class="w-4 h-4 {{ request()->routeIs('assemblies.*') ? 'text-[#FDA481]' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a１ １ ０ ０１１ １v６a１ １ ０ ０１－１ １h－２a１ １ ０ ０１－１－１v－６z"/>
                 </svg>
                 <span>Data Assembly</span>
             </a>
+            @endif
 
             <!-- 5. Master Sparepart -->
+            @if(auth()->user()->role === 'admin')
             <a href="{{ route('spareparts.index') }}" 
                class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl transition duration-200 {{ request()->routeIs('spareparts.*') ? 'bg-[#242E49] text-[#FDA481] border-l-4 border-[#B4182D]' : 'text-slate-300 hover:bg-[#242E49]/60 hover:text-white' }}">
                 <svg class="w-4 h-4 {{ request()->routeIs('spareparts.*') ? 'text-[#FDA481]' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -91,8 +114,10 @@
                 </svg>
                 <span>Master Sparepart</span>
             </a>
+            @endif
 
             <!-- 6. Import Data Excel -->
+            @if(auth()->user()->role === 'admin')
             <a href="{{ route('import.index') }}" 
                class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl transition duration-200 {{ request()->routeIs('import.*') ? 'bg-[#242E49] text-[#FDA481] border-l-4 border-[#B4182D]' : 'text-slate-300 hover:bg-[#242E49]/60 hover:text-white' }}">
                 <svg class="w-4 h-4 {{ request()->routeIs('import.*') ? 'text-[#FDA481]' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -100,6 +125,18 @@
                 </svg>
                 <span>Import Excel (BOM)</span>
             </a>
+            @endif
+
+            <!-- 7. Manajemen Akun (Hanya untuk Admin) -->
+            @if(auth()->user()->role === 'admin')
+            <a href="{{ route('users.index') }}" 
+               class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl transition duration-200 {{ request()->routeIs('users.*') ? 'bg-[#242E49] text-[#FDA481] border-l-4 border-[#B4182D]' : 'text-slate-300 hover:bg-[#242E49]/60 hover:text-white' }}">
+                <svg class="w-4 h-4 {{ request()->routeIs('users.*') ? 'text-[#FDA481]' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span>Manajemen Akun</span>
+            </a>
+            @endif
         </nav>
     </div>
 

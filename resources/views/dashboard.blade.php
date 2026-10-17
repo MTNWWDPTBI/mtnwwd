@@ -10,15 +10,15 @@
             <div class="relative z-10 max-w-4xl">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold m3-badge-peach mb-4">
                     <span class="w-2 h-2 rounded-full bg-[#FDA481] animate-ping"></span>
-                    <span>Sistem Pemeliharaan & Katalog Terpadu WWD</span>
+                    <span>Operasional Maintenance & Sparepart WWD</span>
                 </div>
                 
                 <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-                    Pusat Kendali Mesin & <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#FDA481] to-[#B4182D]">Suku Cadang</span>
+                    Pusat Kendali Mesin & <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#FDA481] to-[#B4182D]">Spareparts</span>
                 </h1>
                 
                 <p class="mt-3 text-slate-300 text-sm sm:text-base max-w-2xl leading-relaxed">
-                    Pilih tipe mesin operasional di bawah untuk melihat suku cadang (*sparepart*), komponen *assembly* (BOM), dan posisi rak (*bin location*) di gudang.
+                    Pilih tipe mesin operasional di bawah untuk melihat sparepart (*sparepart*), komponen *assembly* (BOM), dan posisi rak (*bin location*) di gudang.
                 </p>
 
                 <!-- Floating Search Bar Material Design -->
@@ -31,7 +31,7 @@
                         </div>
                         <input type="text" 
                                name="search" 
-                               placeholder="Cari suku cadang langsung (misal: Loctite, Flange, Clamp, Kode SAP)..." 
+                               placeholder="Cari sparepart langsung (misal: Loctite, Flange, Clamp, Kode SAP)..." 
                                class="w-full pl-11 pr-32 py-3.5 bg-[#181A2F]/90 backdrop-blur-md border border-[#37415C] text-white placeholder-slate-400 rounded-full text-sm focus:outline-none focus:border-[#FDA481] focus:ring-2 focus:ring-[#FDA481]/40 transition shadow-inner">
                         <button type="submit" 
                                 class="absolute right-1.5 px-5 py-2 rounded-full bg-gradient-to-r from-[#B4182D] to-[#54162B] hover:from-[#B4182D] hover:to-[#B4182D] text-white text-xs font-bold tracking-wide shadow-md transition duration-200">

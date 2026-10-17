@@ -18,6 +18,18 @@ class Sparepart extends Model
                     ->withPivot('qty', 'unit');
     }
 
+    // Relasi ke stok TPM (Satu sparepart bisa ada di banyak lokasi TPM)
+    public function tpmStocks()
+    {
+        return $this->hasMany(TpmStock::class, 'sparepart_id');
+    }
+
+    // Relasi ke riwayat transaksi TPM (Satu sparepart punya banyak history)
+    public function tpmTransactions()
+    {
+        return $this->hasMany(TpmTransaction::class, 'sparepart_id');
+    }
+    
     public function inventory()
     {
         return $this->hasOne(Inventory::class);
