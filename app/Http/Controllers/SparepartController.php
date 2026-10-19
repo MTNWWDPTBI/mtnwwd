@@ -39,7 +39,7 @@ class SparepartController extends Controller
         }
 
         // Ambil data beserta lokasi (inventory) dan assembly-nya
-        $spareparts = $query->with(['assemblies'])->paginate(12);
+        $spareparts = $query->with(['assemblies'])->paginate(12)->withQueryString();
 
         // Pertahankan input pencarian lama
         $filters = $request->only(['search', 'machine_id', 'assembly_id']);

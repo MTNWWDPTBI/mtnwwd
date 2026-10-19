@@ -15,7 +15,7 @@ class Assembly extends Model {
     {
         // Relasi many-to-many melalui tabel pivot BOM
         return $this->belongsToMany(Sparepart::class, 'assembly_spareparts')
-                    ->withPivot('qty', 'unit');
+                    ->withPivot('qty', 'unit', 'description');
     }
 }
 

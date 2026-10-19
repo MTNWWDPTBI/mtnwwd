@@ -24,10 +24,9 @@
             </div>
         </div>
 
-        <!-- Kotak Filter & Pencarian (Dibuat Compact untuk HP) -->
+        <!-- Kotak Filter & Pencarian -->
         <div class="bg-[#242E49] p-3 sm:p-6 rounded-xl sm:rounded-[24px] border border-[#37415C]/70 shadow-m3-2">
             <form action="{{ route('sparepart.catalog') }}" method="GET" x-data="filterDropdown()">
-                <!-- Grid: Di HP menyusun ke bawah tapi rapat, di PC sejajar -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-2 sm:gap-4 items-end">
                     
                     <!-- 1. Filter Pencarian Teks -->
@@ -53,8 +52,8 @@
                                 x-on:change="fetchAssemblies()" 
                                 class="w-full py-1.5 sm:py-2.5 px-2 sm:px-3 bg-[#181A2F] border border-[#37415C] text-white focus:border-[#FDA481] focus:ring-2 focus:ring-[#FDA481]/30 rounded-lg sm:rounded-xl text-[11px] sm:text-sm transition">
                             <option value="">-- Semua Mesin --</option>
-                            @foreach($machines as $machine)
-                                <option value="{{ $machine->id }}">{{ $machine->machine_name }} ({{ $machine->machine_code }})</option>
+                            @foreach ($machines as $machine)
+                                <option value="{{ $machine->id }}">{{ $machine->machine_name }} ({{$machine->machine_code }})</option>
                             @endforeach
                         </select>
                     </div>
@@ -106,7 +105,7 @@
             </form>
         </div>
 
-       <!-- Tabel Daftar Sparepart (Bisa Scroll Vertikal & Horizontal di HP) -->
+       <!-- Tabel Daftar Sparepart -->
         <div class="block sm:hidden text-[10px] text-slate-400 italic flex items-center gap-1 mb-1 mt-4">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
             Geser tabel ke kanan atau ke bawah untuk melihat detail
@@ -114,24 +113,26 @@
 
         <div class="bg-[#242E49] rounded-xl sm:rounded-[24px] border border-[#37415C]/70 shadow-m3-2 overflow-hidden mt-0 sm:mt-6">
             
-            <!-- PERUBAHAN UTAMA: Tambah overflow-y-auto dan max-h-[60vh] khusus HP -->
             <div class="overflow-x-auto overflow-y-auto max-h-[60vh] sm:max-h-none custom-scrollbar relative">
                 <table class="min-w-full divide-y divide-[#37415C]/60 text-left">
-                    
-                    <!-- PERUBAHAN KEDUA: Jadikan thead "sticky" dan "z-10" agar header menempel saat di-scroll ke bawah -->
                     <thead class="bg-[#181A2F] sticky top-0 z-10 shadow-sm border-b border-[#37415C]/60">
                         <tr>
                             <th class="px-3 py-2 sm:px-6 sm:py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#FDA481] whitespace-nowrap">Nama Part & Kode SAP</th>
-                            <th class="px-3 py-2 sm:px-6 sm:py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#FDA481] min-w-[200px] sm:min-w-0">Digunakan Di (Mesin & Assembly)</th>
                             <th class="px-3 py-2 sm:px-6 sm:py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#FDA481] whitespace-nowrap">Lokasi Bin / Rak Gudang</th>
+                            <th class="px-3 py-2 sm:px-6 sm:py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#FDA481] min-w-[200px] sm:min-w-0">Digunakan Di (Mesin & Assembly)</th>
+                            <!-- Kolom Header "Deskripsi Posisi" HANYA MUNCUL JIKA FILTER ASSEMBLY AKTIF -->
+                            @if(request()->filled('assembly_id'))
+                                <th class="px-3 py-2 sm:px-6 sm:py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-emerald-400 whitespace-nowrap">Posisi di Assembly</th>
+                            @endif
                         </tr>
                     </thead>
                     
                     <tbody class="divide-y divide-[#37415C]/40 text-xs sm:text-sm">
                         @if(count($spareparts) > 0)
-                            @foreach($spareparts as $part)
+                            @foreach ($spareparts as $part)
                             <tr class="hover:bg-[#181A2F]/40 transition duration-150">
                                 
+                                <!-- Kolom 1: Nama Part & SAP -->
                                 <td class="px-3 py-2 sm:px-6 sm:py-4">
                                     <div class="font-bold text-white text-[11px] sm:text-base tracking-tight leading-tight">{{ $part->part_name }}</div>
                                     <div class="flex items-center gap-1.5 sm:gap-2 mt-1">
@@ -141,23 +142,7 @@
                                     </div>
                                 </td>
 
-                                <td class="px-3 py-2 sm:px-6 sm:py-4">
-                                    <div class="flex flex-wrap gap-1 sm:gap-1.5 max-h-16 sm:max-h-full overflow-y-auto custom-scrollbar">
-                                        @forelse($part->assemblies as $assy)
-                                            <span class="inline-flex items-center gap-1 sm:gap-1.5 px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded sm:rounded-lg text-[9px] sm:text-xs font-medium bg-[#181A2F] text-slate-200 border border-[#37415C]/80">
-                                                <span class="font-bold text-[#FDA481] truncate max-w-[80px] sm:max-w-none">{{ $assy->machine->machine_name ?? 'Mesin' }}</span>
-                                                <span class="text-slate-400">&bull;</span>
-                                                <span class="truncate max-w-[80px] sm:max-w-none">{{ $assy->assembly_name }}</span>
-                                                <span class="text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.2 rounded bg-[#37415C] text-slate-300 font-mono whitespace-nowrap">
-                                                    {{ $assy->pivot->qty }} {{ $assy->pivot->unit }}
-                                                </span>
-                                            </span>
-                                        @empty
-                                            <span class="text-[9px] sm:text-xs text-slate-500 italic">Belum terhubung ke assembly</span>
-                                        @endforelse
-                                    </div>
-                                </td>
-
+                                <!-- Kolom 2: Lokasi Bin -->
                                 <td class="px-3 py-2 sm:px-6 sm:py-4 whitespace-nowrap">
                                     @if(!empty($part->bin_location))
                                         <span class="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-xs font-bold bg-[#FDA481]/15 text-[#FDA481] border border-[#FDA481]/40 shadow-sm">
@@ -174,11 +159,50 @@
                                     @endif
                                 </td>
 
+                                <!-- Kolom 3: Digunakan di Assembly -->
+                                <td class="px-3 py-2 sm:px-6 sm:py-4">
+                                    <div class="flex flex-wrap gap-1 sm:gap-1.5 max-h-16 sm:max-h-full overflow-y-auto custom-scrollbar">
+                                        @forelse($part->assemblies as $assy)
+                                            <span class="inline-flex items-center gap-1 sm:gap-1.5 px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded sm:rounded-lg text-[9px] sm:text-xs font-medium bg-[#181A2F] text-slate-200 border border-[#37415C]/80">
+                                                <span class="font-bold text-[#FDA481] truncate max-w-[80px] sm:max-w-none">{{ $assy->machine->machine_name ?? 'Mesin' }}</span>
+                                                <span class="text-slate-400">&bull;</span>
+                                                <span class="truncate max-w-[80px] sm:max-w-none">{{ $assy->assembly_name }}</span>
+                                                <span class="text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.2 rounded bg-[#37415C] text-slate-300 font-mono whitespace-nowrap">
+                                                    {{ $assy->pivot->qty }} {{$assy->pivot->unit }}
+                                                </span>
+                                            </span>
+                                        @empty
+                                            <span class="text-[9px] sm:text-xs text-slate-500 italic">Belum terhubung ke assembly</span>
+                                        @endforelse
+                                    </div>
+                                </td>
+
+                                <!-- Kolom 4: Deskripsi Posisi (HANYA MUNCUL JIKA FILTER ASSEMBLY AKTIF) -->
+                                @if(request()->filled('assembly_id'))
+                                    <td class="px-3 py-2 sm:px-6 sm:py-4">
+                                        @php $foundDesc = false; @endphp
+                                        @foreach ($part->assemblies as $assy)
+                                            @if($assy->id == request('assembly_id'))
+                                                @if(!empty($assy->pivot->description))
+                                                    <span class="inline-block px-2 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded font-semibold text-[10px] sm:text-xs">
+                                                        {{ $assy->pivot->description }}
+                                                    </span>
+                                                    @php $foundDesc = true; @endphp
+                                                @endif
+                                            @endif
+                                        @endforeach
+                                        
+                                        @if(!$foundDesc)
+                                            <span class="text-slate-500 italic text-[10px] sm:text-xs">-</span>
+                                        @endif
+                                    </td>
+                                @endif
+
                             </tr>
                             @endforeach
                         @else
                             <tr>
-                                <td colspan="3" class="px-3 py-8 sm:px-6 sm:py-12 text-center text-slate-400">
+                                <td colspan="4" class="px-3 py-8 sm:px-6 sm:py-12 text-center text-slate-400">
                                     <div class="font-semibold text-white text-xs sm:text-base">Tidak ada data sparepart yang sesuai</div>
                                 </td>
                             </tr>

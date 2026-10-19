@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Machine;
 use App\Models\Sparepart;
 use App\Models\Assembly;
+use App\Models\TpmPart; // Pastikan Model TpmPart di-import di atas
 
 class HomeController extends Controller
 {
@@ -29,6 +30,10 @@ class HomeController extends Controller
             'total_locations'   => Sparepart::whereNotNull('bin_location')->where('bin_location', '!=', '')->count(),
         ];
 
-        return view('dashboard', compact('machines', 'stats'));
+        // TAMBAHAN: Ambil barang TPM yang stoknya <= min_stock
+        $lowStockTpmParts = TpmPart::whereColumn('stock', '<=', 'min_stock')->get();
+
+        // Kirimkan $lowStockTpmParts ke view dashboard
+        return view('dashboard', compact('stats', 'machines', 'lowStockTpmParts'));
     }
 }

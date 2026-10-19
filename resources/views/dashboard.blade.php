@@ -101,7 +101,65 @@
             </div>
         </div>
 
-        <!-- 3. Machine Type Cards Grid (Material Design 3) -->
+        <!-- 3. Widget Peringatan Stok Minimum TPM (HANYA MUNCUL JIKA ADA STOK MINIMUM) -->
+        @if(isset($lowStockTpmParts) && $lowStockTpmParts->count() > 0)
+        <div class="bg-[#242E49] border border-rose-500/40 rounded-[24px] p-5 sm:p-6 shadow-m3-2 relative overflow-hidden">
+            <!-- Ambient Glow Spot Merah -->
+            <div class="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-rose-500/10 blur-2xl pointer-events-none"></div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#37415C]/60">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                            <span>Peringatan Stok TPM Menipis</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                                {{ $lowStockTpmParts->count() }} Item
+                            </span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">
+                            Barang berikut mencapai atau berada di bawah batas minimum stok TPM.
+                        </p>
+                    </div>
+                </div>
+
+                <a href="{{ route('tpm.index') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#B4182D] to-[#54162B] hover:from-[#B4182D] hover:to-[#B4182D] text-white text-xs font-bold tracking-wide shadow-md transition duration-200 shrink-0">
+                    <span>Kelola Stok di TPM</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </a>
+            </div>
+
+            <!-- List Card Barang TPM yang Stoknya Menipis (Bisa diklik ke TPM) -->
+            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                @foreach($lowStockTpmParts as $part)
+                    <a href="{{ route('tpm.index') }}" class="group bg-[#181A2F] border border-[#37415C] hover:border-rose-500/50 p-3.5 rounded-xl flex items-center justify-between gap-3 transition duration-200">
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold text-white text-xs sm:text-sm truncate group-hover:text-[#FDA481] transition">
+                                {{ $part->name }}
+                            </div>
+                            <div class="text-[10px] text-slate-400 mt-0.5 font-mono">
+                                Kode: {{ $part->tpm_part_number }} &bull; Rak: {{ $part->location ?? '-' }}
+                            </div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <div class="text-xs font-extrabold text-rose-400">
+                                Stok: {{ $part->stock }}
+                            </div>
+                            <div class="text-[10px] text-slate-400 font-medium">
+                                Min: {{ $part->min_stock }}
+                            </div>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+        <!-- 4. Machine Type Cards Grid (Material Design 3) -->
         <div>
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                 <div>

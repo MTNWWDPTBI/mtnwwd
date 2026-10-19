@@ -78,6 +78,13 @@
                                             <span class="truncate"><strong class="text-[#FDA481]">{{ $assy->machine->machine_name ?? '' }}</strong> - {{ $assy->assembly_name }}</span>
                                             <span class="px-1 py-0.5 rounded bg-[#37415C] text-slate-300 font-mono whitespace-nowrap">({{ $assy->pivot->qty }} {{ $assy->pivot->unit }})</span>
                                         </div>
+                                        <!-- Tampilkan Deskripsi Posisi jika terisi -->
+                                            @if(!empty($assy->pivot->description))
+                                                <div class="text-[9px] text-slate-400 italic border-t border-[#37415C]/50 pt-1 flex items-center gap-1">
+                                                    <span class="text-[#FDA481] font-semibold">Posisi:</span> {{ $assy->pivot->description }}
+                                                </div>
+                                            @endif
+                                        </div>
                                     @empty
                                         <span class="text-slate-500 text-[10px] sm:text-xs italic">-</span>
                                     @endforelse

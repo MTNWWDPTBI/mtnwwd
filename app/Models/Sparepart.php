@@ -15,7 +15,7 @@ class Sparepart extends Model
     public function assemblies()
     {
         return $this->belongsToMany(Assembly::class, 'assembly_spareparts', 'sparepart_id', 'assembly_id')
-                    ->withPivot('qty', 'unit');
+                    ->withPivot('qty', 'unit', 'description');
     }
 
     // Relasi ke stok TPM (Satu sparepart bisa ada di banyak lokasi TPM)

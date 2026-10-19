@@ -79,20 +79,30 @@ class ImportController extends Controller
             // 4. Import Sheet: Assembly_BOM
             $bomSheet = $spreadsheet->getSheetByName('Assembly_BOM');
             if ($bomSheet) {
+                // KOSONGKAN TABEL RELASI LAMA SEBELUM IMPORT YANG BARU
+                // (Gunakan truncate atau delete agar data lama yang sudah tidak ada di excel ikut terhapus)
+                AssemblySparepart::query()->delete();
+
                 $rows = $bomSheet->toArray(null, true, true, true);
                 foreach ($rows as $index => $row) {
                     if ($index == 1 || empty($row['A']) || empty($row['D'])) continue;
-                    // GUNAKAN trim() UNTUK MEMBERSIHKAN SPASI TERSEMBUNYI
+                    
                     $assemblyCode = trim($row['A']);
                     $partId = trim($row['D']);
-                    $assembly = Assembly::where('assembly_code', $row['A'])->first();
-                    $sparepart = Sparepart::where('part_id', $row['D'])->first();
+                    
+                    // PERBAIKAN KECIL: Gunakan variabel $assemblyCode & $partId yang sudah di-trim agar pencarian akurat
+                    $assembly = Assembly::where('assembly_code', $assemblyCode)->first();
+                    $sparepart = Sparepart::where('part_id', $partId)->first();
 
                     if ($assembly && $sparepart) {
-                        AssemblySparepart::updateOrCreate(
-                            ['assembly_id' => $assembly->id, 'sparepart_id' => $sparepart->id],
-                            ['qty' => $row['E'], 'unit' => $row['F'] ?? 'pc']
-                        );
+                        // Karena tabel sudah dikosongkan dengan truncate, kita bisa langsung create atau tetap pakai updateorticreate
+                        AssemblySparepart::create([
+                            'assembly_id' => $assembly->id, 
+                            'sparepart_id' => $sparepart->id,
+                            'qty' => $row['E'], 
+                            'unit' => $row['F'] ?? 'pc',
+                            'description' => $row['G'] ?? null
+                        ]);
                     }
                 }
             }
