@@ -14,7 +14,7 @@
                 </div>
                 
                 <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-                    Pusat Kendali Mesin & <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#FDA481] to-[#B4182D]">Spareparts</span>
+                    Pusat Kendali Mesin, <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#FDA481] to-[#B4182D]">Improvement & Spareparts</span>
                 </h1>
                 
                 <p class="mt-3 text-slate-300 text-sm sm:text-base max-w-2xl leading-relaxed">
@@ -158,6 +158,91 @@
             </div>
         </div>
         @endif
+
+        <!-- ========================================== -->
+<!-- KOTAK SHIFT HANDOVER (PROBLEM OPEN)        -->
+<!-- ========================================== -->
+@if($openHandovers->count() > 0)
+<div class="mt-8 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-6">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-amber-500 flex items-center gap-2">
+            <!-- Icon Alert Warning -->
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            Warisan Belum Selesai (OPEN)
+        </h2>
+        <a href="{{ route('handover.index') }}" class="text-sm text-amber-500 hover:underline font-semibold">Ke Menu Handover &rarr;</a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        @foreach($openHandovers as $handover)
+            <div class="bg-[#181A2F] border border-amber-500/20 rounded-xl p-4 flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-500 uppercase">
+                            Shift {{ $handover->shift }}
+                        </span>
+                        <span class="text-xs text-slate-400">{{ $handover->created_at->format('d M Y - H:i') }}</span>
+                    </div>
+                    
+                    <!-- Asumsi nama relasi mesinnya 'machine' dan ada kolom 'problem'. Sesuaikan jika berbeda -->
+                    <h3 class="text-sm font-bold text-white mb-1">
+                        {{ $handover->machine_name }}
+                    </h3>
+                    <p class="text-xs text-slate-300 line-clamp-2">{{ $handover->problem_description }}</p>
+                </div>
+                
+                <div class="mt-4 text-[10px] text-slate-400">
+                    Dilaporkan oleh: <span class="font-bold text-white">{{ $handover->reported_by }}</span>
+                </div>
+            </div>
+        @endforeach
+    </div>
+</div>
+@endif
+
+
+            <!-- Bagian Project & Improvement WWD -->
+            <div class="mt-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-white">Project & Improvement WWD Terbaru</h2>
+                    <a href="{{ route('wwd-projects.index') }}" class="text-sm text-[#FDA481] hover:underline font-semibold">Lihat Semua &rarr;</a>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    @forelse($wwdProjects as $project)
+                        @php
+                            $progress = $project->total_machines > 0 ? round(($project->closed_machines / $project->total_machines) * 100) : 0;
+                        @endphp
+                        <a href="{{ route('wwd-projects.show', $project->id) }}" class="block bg-[#242E49] border border-[#37415C]/60 hover:border-[#FDA481]/50 rounded-[20px] p-4 transition duration-300 group">
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="px-2 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider {{ $project->status == 'OPEN' ? 'bg-[#FDA481]/20 text-[#FDA481]' : 'bg-emerald-500/20 text-emerald-400' }}">
+                                    {{ $project->status }}
+                                </span>
+                                <span class="text-[10px] text-slate-400 font-medium">{{ \Carbon\Carbon::parse($project->target_date)->format('d M') }}</span>
+                            </div>
+                            
+                            <h3 class="text-md font-bold text-white group-hover:text-[#FDA481] transition line-clamp-1">{{ $project->project_name }}</h3>
+                            
+                            <!-- Progress Bar -->
+                            <div class="mt-4">
+                                <div class="flex justify-between text-[10px] font-semibold mb-1.5">
+                                    <span class="text-slate-300">Progress</span>
+                                    <span class="text-[#FDA481]">{{ $progress }}%</span>
+                                </div>
+                                <div class="w-full bg-[#181A2F] rounded-full h-1.5 border border-[#37415C]">
+                                    <div class="bg-gradient-to-r from-[#B4182D] to-[#FDA481] h-1.5 rounded-full" style="width: {{ $progress }}%"></div>
+                                </div>
+                            </div>
+                        </a>
+                    @empty
+                        <div class="col-span-full p-6 text-center bg-[#242E49] border border-[#37415C] rounded-2xl text-slate-400 text-sm">
+                            Belum ada project yang berjalan.
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
+            
 
         <!-- 4. Machine Type Cards Grid (Material Design 3) -->
         <div>

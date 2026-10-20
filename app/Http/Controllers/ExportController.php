@@ -6,6 +6,7 @@ use App\Models\TPMPart;
 use App\Models\Handover;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\WwdProject;
 
 class ExportController extends Controller
 {
@@ -177,5 +178,62 @@ class ExportController extends Controller
         $html .= '</tbody></table></body></html>';
 
         return response($html, 200, $headers);
+    }
+
+    // 4. Tambahkan Fungsi Export WWD ini di bagian paling bawah sebelum tutup kurung kurawal '}'
+    public function exportWwdProject($id)
+    {
+        // Ambil data project beserta relasinya
+        $project = WwdProject::with(['details.machineUnit.machine'])->findOrFail($id);
+
+        // Format nama file: Project_WWD_Nama_Project_Tanggal.csv
+        $fileName = 'Project_WWD_' . preg_replace('/[^A-Za-z0-9\-]/', '_', $project->project_name) . '_' . date('Ymd') . '.csv';
+
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        // Susun Header Kolom Excel-nya
+        $columns = array_merge(
+            ['Nomor Mesin', 'Tipe Mesin'],
+            $project->column_headers ?? [], // Masukkan kolom dinamis JSON ke header
+            ['Status', 'Terakhir Update']
+        );
+
+        $callback = function() use($project, $columns) {
+            $file = fopen('php://output', 'w');
+            
+            // Tambahkan karakter BOM (Byte Order Mark) agar Excel bisa membaca teks UTF-8 dengan sempurna
+            fputs($file, $bom =( chr(0xEF) . chr(0xBB) . chr(0xBF) ));
+            
+            // Tulis baris header (Gunakan titik koma ';' sebagai pemisah karena format Excel Indonesia)
+            fputcsv($file, $columns, ','); 
+
+            // Tulis isi datanya
+            foreach ($project->details as $detail) {
+                $row = [
+                    $detail->machineUnit->machine_number,
+                    $detail->machineUnit->machine->machine_name,
+                ];
+
+                // Isi data dinamis sesuai dengan kolom yang diketik admin
+                foreach ($project->column_headers as $header) {
+                    $row[] = $detail->dynamic_data[$header] ?? '';
+                }
+
+                $row[] = $detail->status;
+                $row[] = $detail->updated_at->format('d/m/Y H:i');
+
+                fputcsv($file, $row, ',');
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

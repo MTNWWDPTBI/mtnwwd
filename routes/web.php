@@ -12,6 +12,8 @@ use App\Http\Controllers\TPMController;
 use App\Http\Controllers\HandoverController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\WwdProjectController;
+use App\Models\WwdProject;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -48,6 +50,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/handover/store', [HandoverController::class, 'store'])->name('handover.store');
     Route::post('/handover/resolve/{id}', [HandoverController::class, 'resolve'])->name('handover.resolve');
 
+    // Rute untuk WWD Projects
+    Route::resource('wwd-projects', WwdProjectController::class);
+    
+    // Rute khusus untuk teknisi update detail checklist JSON
+    Route::put('wwd-projects/details/{id}', [WwdProjectController::class, 'updateDetail'])
+         ->name('wwd-projects.details.update');
 
     // ========================================================
     // ZONA KHUSUS ADMIN (DIGEMBOK MIDDLEWARE)
@@ -78,7 +86,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/export/tpm', [ExportController::class, 'exportTpm'])->name('export.tpm');
         Route::get('/export/tpm-transactions', [ExportController::class, 'exportTpmTransactions'])->name('export.tpm.transactions');
         Route::get('/export/handover', [ExportController::class, 'exportHandover'])->name('export.handover');
-    });
+    
+        // Rute Export Khusus Project WWD (Hanya Admin)
+        Route::get('/export/wwd-project/{id}', [ExportController::class, 'exportWwdProject'])->name('export.wwd_project');
+    
+        });
 });
 
 require __DIR__.'/auth.php';

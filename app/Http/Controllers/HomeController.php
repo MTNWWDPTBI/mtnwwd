@@ -6,13 +6,15 @@ use Illuminate\Http\Request;
 use App\Models\Machine;
 use App\Models\Sparepart;
 use App\Models\Assembly;
-use App\Models\TpmPart; // Pastikan Model TpmPart di-import di atas
+use App\Models\TpmPart; 
+use App\Models\WwdProject; 
+use App\Models\Handover;
 
 class HomeController extends Controller
 {
     public function index()
     {
-        // Mengambil semua data mesin dengan hitungan assembly
+        // 1. Mengambil semua data mesin dengan hitungan assembly
         $machines = Machine::withCount('assemblies')->get();
 
         // Hitung jumlah sparepart yang terhubung per mesin
@@ -22,7 +24,7 @@ class HomeController extends Controller
             })->count();
         }
 
-        // Statistik ringkasan untuk kartu metrik Material Design
+        // 2. Statistik ringkasan untuk kartu metrik Material Design
         $stats = [
             'total_machines'    => $machines->count(),
             'total_assemblies'  => Assembly::count(),
@@ -30,10 +32,24 @@ class HomeController extends Controller
             'total_locations'   => Sparepart::whereNotNull('bin_location')->where('bin_location', '!=', '')->count(),
         ];
 
-        // TAMBAHAN: Ambil barang TPM yang stoknya <= min_stock
+        // 3. Ambil barang TPM yang stoknya <= min_stock
         $lowStockTpmParts = TpmPart::whereColumn('stock', '<=', 'min_stock')->get();
 
-        // Kirimkan $lowStockTpmParts ke view dashboard
-        return view('dashboard', compact('stats', 'machines', 'lowStockTpmParts'));
+        // 4. Ambil 4 project WWD terbaru beserta perhitungan progress-nya
+        $wwdProjects = WwdProject::withCount([
+            'details as total_machines',
+            'details as closed_machines' => function ($query) {
+                $query->where('status', 'CLOSE');
+            }
+        ])->latest()->take(4)->get();
+
+        // 2. TAMBAHKAN KODE INI: Ambil 4 Handover terbaru yang masih OPEN
+        $openHandovers = Handover::where('status', 'OPEN')->latest()->take(4)->get();
+
+        // 3. JANGAN LUPA: Tambahkan 'openHandovers' ke dalam compact
+        return view('dashboard', compact('stats', 'machines', 'lowStockTpmParts', 'wwdProjects', 'openHandovers'));
     }
+    
+    
+    
 }
