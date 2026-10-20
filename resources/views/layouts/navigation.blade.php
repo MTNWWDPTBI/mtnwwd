@@ -64,7 +64,7 @@
             <a href="{{ route('tpm.index') }}" 
                 class="flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition duration-200 {{ request()->routeIs('tpm.*') ? 'bg-[#242E49] text-[#FDA481] border-l-4 border-[#B4182D] shadow-sm' : 'text-slate-300 hover:bg-[#242E49]/60 hover:text-white' }}">
                 <svg class="w-5 h-5 {{ request()->routeIs('tpm.*') ? 'text-[#FDA481]' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
                 <span>TPM</span>
             </a>
@@ -73,24 +73,35 @@
             <a href="{{ route('handover.index') }}" 
             class="flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition duration-200 {{ request()->routeIs('handover.*') ? 'bg-[#242E49] text-[#FDA481] border-l-4 border-[#B4182D] shadow-sm' : 'text-slate-300 hover:bg-[#242E49]/60 hover:text-white' }}">
                 <svg class="w-5 h-5 {{ request()->routeIs('handover.*') ? 'text-[#FDA481]' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                 </svg>
                 <span>Shift Handover</span>
             </a>
 
-            <a href="{{ route('wwd-projects.index') }}" class="flex items-center px-4 py-3 mt-2 text-slate-300 hover:bg-[#242E49] hover:text-white rounded-xl transition duration-200 {{ request()->routeIs('wwd-projects.*') ? 'bg-[#242E49] text-white border-l-4 border-[#FDA481]' : '' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- 5. Project WWD -->
+            <a href="{{ route('wwd-projects.index') }}" 
+               class="flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition duration-200 {{ request()->routeIs('wwd-projects.*') ? 'bg-[#242E49] text-[#FDA481] border-l-4 border-[#B4182D] shadow-sm' : 'text-slate-300 hover:bg-[#242E49]/60 hover:text-white' }}">
+                <svg class="w-5 h-5 {{ request()->routeIs('wwd-projects.*') ? 'text-[#FDA481]' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
                 </svg>
-                Project WWD
-                </a>
+                <span>Project WWD</span>
+            </a>
+
+            <!-- 6. Smart Assistant (Menu Baru) -->
+            <a href="{{ route('assistant.index') }}" 
+               class="flex items-center gap-3 px-4 py-3 mt-2 text-sm font-bold rounded-xl transition duration-200 {{ request()->routeIs('assistant.*') ? 'bg-gradient-to-r from-[#242E49] to-[#181A2F] text-[#FDA481] border-l-4 border-[#FDA481] shadow-lg' : 'text-slate-200 bg-[#242E49]/40 hover:bg-[#242E49]/80 hover:text-white border border-[#37415C]/50' }}">
+                <svg class="w-5 h-5 {{ request()->routeIs('assistant.*') ? 'text-[#FDA481]' : 'text-[#FDA481]/70' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                <span class="tracking-wide">AI Smart Assistant</span>
+            </a>
 
             <!-- Group: Master Data & Admin -->
             <div class="pt-6 px-3 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Kelola Data Master
             </div>
 
-            <!-- 3. Master Mesin -->
+            <!-- Master Mesin -->
             @if(auth()->user()->role === 'admin')
             <a href="{{ route('machines.index') }}" 
                class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl transition duration-200 {{ request()->routeIs('machines.*') ? 'bg-[#242E49] text-[#FDA481] border-l-4 border-[#B4182D]' : 'text-slate-300 hover:bg-[#242E49]/60 hover:text-white' }}">
@@ -101,18 +112,18 @@
             </a>
             @endif
 
-            <!-- 4. Master Assembly -->
+            <!-- Master Assembly -->
             @if(auth()->user()->role === 'admin')
             <a href="{{ route('assemblies.index') }}" 
                class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl transition duration-200 {{ request()->routeIs('assemblies.*') ? 'bg-[#242E49] text-[#FDA481] border-l-4 border-[#B4182D]' : 'text-slate-300 hover:bg-[#242E49]/60 hover:text-white' }}">
                 <svg class="w-4 h-4 {{ request()->routeIs('assemblies.*') ? 'text-[#FDA481]' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a１ １ ０ ０１１ １v６a１ １ ０ ０１－１ １h－２a１ １ ０ ０１－１－１v－６z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
                 </svg>
                 <span>Data Assembly</span>
             </a>
             @endif
 
-            <!-- 5. Master Sparepart -->
+            <!-- Master Sparepart -->
             @if(auth()->user()->role === 'admin')
             <a href="{{ route('spareparts.index') }}" 
                class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl transition duration-200 {{ request()->routeIs('spareparts.*') ? 'bg-[#242E49] text-[#FDA481] border-l-4 border-[#B4182D]' : 'text-slate-300 hover:bg-[#242E49]/60 hover:text-white' }}">
@@ -123,7 +134,7 @@
             </a>
             @endif
 
-            <!-- 6. Import Data Excel -->
+            <!-- Import Data Excel -->
             @if(auth()->user()->role === 'admin')
             <a href="{{ route('import.index') }}" 
                class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl transition duration-200 {{ request()->routeIs('import.*') ? 'bg-[#242E49] text-[#FDA481] border-l-4 border-[#B4182D]' : 'text-slate-300 hover:bg-[#242E49]/60 hover:text-white' }}">
@@ -134,12 +145,12 @@
             </a>
             @endif
 
-            <!-- 7. Manajemen Akun (Hanya untuk Admin) -->
+            <!-- Manajemen Akun -->
             @if(auth()->user()->role === 'admin')
             <a href="{{ route('users.index') }}" 
                class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-xl transition duration-200 {{ request()->routeIs('users.*') ? 'bg-[#242E49] text-[#FDA481] border-l-4 border-[#B4182D]' : 'text-slate-300 hover:bg-[#242E49]/60 hover:text-white' }}">
                 <svg class="w-4 h-4 {{ request()->routeIs('users.*') ? 'text-[#FDA481]' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 <span>Manajemen Akun</span>
             </a>

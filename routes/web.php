@@ -14,6 +14,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\WwdProjectController;
 use App\Models\WwdProject;
+use App\Http\Controllers\SmartAssistantController;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -57,6 +58,10 @@ Route::middleware('auth')->group(function () {
     Route::put('wwd-projects/details/{id}', [WwdProjectController::class, 'updateDetail'])
          ->name('wwd-projects.details.update');
 
+    // Rute Smart Assistant
+    Route::get('/smart-assistant', [App\Http\Controllers\SmartAssistantController::class, 'index'])->name('assistant.index');
+    Route::post('/smart-assistant/chat', [App\Http\Controllers\SmartAssistantController::class, 'chat'])->name('assistant.chat');
+
     // ========================================================
     // ZONA KHUSUS ADMIN (DIGEMBOK MIDDLEWARE)
     // ========================================================
@@ -65,6 +70,9 @@ Route::middleware('auth')->group(function () {
         // Import Data Master dari Excel
         Route::get('/import-data', [ImportController::class, 'index'])->name('import.index');
         Route::post('/import-data', [ImportController::class, 'store'])->name('import.store');
+
+        // TAMBAHKAN INI: Rute khusus Import SAP
+        Route::post('/import-sap', [ImportController::class, 'importSap'])->name('import.sap');
 
         // Master Data CRUD (Manajemen Mesin, Assembly, dan Sparepart)
         Route::resource('machines', MachineController::class);

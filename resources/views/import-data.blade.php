@@ -49,5 +49,29 @@
                 </div>
             </form>
         </div>
+    
+                <!-- KOTAK IMPORT DATA SAP -->
+        <div class="bg-[#242E49] border border-[#37415C] rounded-2xl p-6 mt-6">
+            <h2 class="text-xl font-bold text-white mb-2">Import History SAP</h2>
+            <p class="text-sm text-slate-400 mb-4">Unggah file hasil export SAP yang sudah disimpan dalam format <b>.CSV (Comma Delimited)</b>.</p>
+
+            <form action="{{ route('import.sap') }}" method="POST" enctype="multipart/form-data" class="flex flex-col md:flex-row gap-4 items-center">
+                @csrf
+                <div class="w-full">
+                    <input type="file" name="file" accept=".csv" required
+                        class="block w-full text-sm text-slate-400
+                        file:mr-4 file:py-2.5 file:px-4
+                        file:rounded-xl file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-[#181A2F] file:text-white
+                        hover:file:bg-[#37415C] file:cursor-pointer file:transition
+                        border border-[#37415C] rounded-xl bg-[#181A2F]">
+                </div>
+                <button type="submit" class="w-full md:w-auto px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold shadow-md transition duration-200 shrink-0">
+                    Mulai Import SAP
+                </button>
+            </form>
+        </div>
+    
     </div>
 </x-app-layout>
