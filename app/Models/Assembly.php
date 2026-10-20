@@ -4,8 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Assembly extends Model {
+class Assembly extends Model
+{
     protected $guarded = [];
+
     public function machine()
     {
         return $this->belongsTo(Machine::class);
@@ -15,7 +17,6 @@ class Assembly extends Model {
     {
         // Relasi many-to-many melalui tabel pivot BOM
         return $this->belongsToMany(Sparepart::class, 'assembly_spareparts')
-                    ->withPivot('qty', 'unit', 'description');
+            ->withPivot('qty', 'unit', 'description');
     }
 }
-

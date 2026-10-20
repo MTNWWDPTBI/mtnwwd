@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Sparepart;
 use App\Models\Assembly;
-use App\Models\Inventory;
+use App\Models\Sparepart;
 use Illuminate\Http\Request;
 
 class AdminSparepartController extends Controller
@@ -12,12 +11,14 @@ class AdminSparepartController extends Controller
     public function index(Request $request)
     {
         $spareparts = Sparepart::with(['assemblies.machine'])->paginate(10);
+
         return view('admin.spareparts.index', compact('spareparts'));
     }
 
     public function create()
     {
         $assemblies = Assembly::with('machine')->get();
+
         return view('admin.spareparts.create', compact('assemblies'));
     }
 
@@ -27,12 +28,12 @@ class AdminSparepartController extends Controller
             'sap_code' => 'required|unique:spareparts,sap_code',
             'part_name' => 'required',
             'bin_location' => 'required',
-            'assembly_id' => 'required'
+            'assembly_id' => 'required',
         ]);
 
         // Simpan Sparepart
         $sparepart = Sparepart::create([
-            'part_id' => $request->part_id ?? ('SP' . (Sparepart::max('id') + 1)),
+            'part_id' => $request->part_id ?? ('SP'.(Sparepart::max('id') + 1)),
             'sap_code' => $request->sap_code,
             'part_name' => $request->part_name,
             'bin_location' => $request->bin_location,
@@ -41,7 +42,7 @@ class AdminSparepartController extends Controller
         // Hubungkan ke Assembly (BOM)
         $sparepart->assemblies()->attach($request->assembly_id, [
             'qty' => $request->qty ?? 1,
-            'unit' => $request->unit ?? 'Pcs'
+            'unit' => $request->unit ?? 'Pcs',
         ]);
 
         return redirect()->route('spareparts.index')->with('success', 'Master Sparepart berhasil ditambahkan.');
@@ -51,16 +52,17 @@ class AdminSparepartController extends Controller
     {
         $sparepart->load(['assemblies']);
         $assemblies = Assembly::with('machine')->get();
+
         return view('admin.spareparts.edit', compact('sparepart', 'assemblies'));
     }
 
     public function update(Request $request, Sparepart $sparepart)
     {
         $request->validate([
-            'sap_code' => 'required|unique:spareparts,sap_code,' . $sparepart->id,
+            'sap_code' => 'required|unique:spareparts,sap_code,'.$sparepart->id,
             'part_name' => 'required',
             'bin_location' => 'required',
-            'assembly_id' => 'required'
+            'assembly_id' => 'required',
         ]);
 
         $sparepart->update([
@@ -73,8 +75,8 @@ class AdminSparepartController extends Controller
         $sparepart->assemblies()->sync([
             $request->assembly_id => [
                 'qty' => $request->qty ?? 1,
-                'unit' => $request->unit ?? 'Pcs'
-            ]
+                'unit' => $request->unit ?? 'Pcs',
+            ],
         ]);
 
         return redirect()->route('spareparts.index')->with('success', 'Master Sparepart berhasil diperbarui.');

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Handover;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class HandoverController extends Controller
 {
@@ -15,7 +15,7 @@ class HandoverController extends Controller
             ->orderBy('handover_date', 'desc')
             ->orderBy('shift', 'desc')
             ->get();
-            
+
         return view('handovers.index', compact('handovers'));
     }
 
@@ -25,7 +25,7 @@ class HandoverController extends Controller
         return view('handovers.create');
     }
 
-    /// 3. Simpan Data Handover Baru (Ketik Manual)
+    // / 3. Simpan Data Handover Baru (Ketik Manual)
     public function store(Request $request)
     {
         $request->validate([
@@ -53,7 +53,7 @@ class HandoverController extends Controller
     public function resolve($id)
     {
         $handover = Handover::findOrFail($id);
-        
+
         $handover->update([
             'status' => 'CLOSED',
             'resolved_by' => auth()->user()->name ?? 'Teknisi Shift Lanjutan',

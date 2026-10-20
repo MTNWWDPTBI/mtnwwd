@@ -2,32 +2,34 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class SmartAssistantController extends Controller
 {
-    // 1. Menampilkan halaman Chat UI
-    public function index()
+    /**
+     * Tampilkan halaman Chat UI Smart Assistant.
+     */
+    public function index(): View
     {
         return view('assistant.index');
     }
 
-    // 2. Memproses pesan dari user ke Gemini API
-    public function chat(Request $request)
+    /**
+     * Memproses pesan dari user ke AI Gateway dan database SAP.
+     */
+    public function chat(Request $request): JsonResponse
     {
         $request->validate([
-            'message' => 'required|string'
+            'message' => 'required|string',
         ]);
 
-        $userMessage = $request->message;
-        $apiKey      = env('GEMINI_API_KEY');
+        $userMessage = $request->string('message')->trim()->value();
 
-        // Endpoint terbaru: v1beta + key via header X-goog-api-key
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent";
-
-        // 1. SYSTEM CONTEXT (Beri tahu AI tentang skema tabel database)
         $systemContext = "Kamu adalah 'Bagus-AI', Asisten Cerdas Maintenance Pabrik Bekaert.
 Kamu memiliki akses ke tabel MySQL bernama `sap_histories` yang berisi riwayat kerusakan mesin (ribuan baris).
 Kolom penting di tabel `sap_histories`:
@@ -48,88 +50,102 @@ Contoh balasan jika butuh data:
 
 Jika pertanyaan user hanya sapaan santai atau tidak butuh data database, jawablah menggunakan bahasa Indonesia yang natural, profesional, dan ringkas layaknya engineer.";
 
-        // Eksekusi Panggilan Pertama ke AI
-        $aiReply = $this->callGemini($url, $apiKey, $systemContext, $userMessage);
+        $aiReply = $this->callAi($systemContext, $userMessage);
 
-        if (strpos($aiReply, 'ERROR_API:') !== false) {
-            return response()->json(['reply' => 'Gagal terhubung ke API: ' . str_replace('ERROR_API:', '', $aiReply)], 500);
+        if (str_starts_with($aiReply, 'ERROR_API:')) {
+            return response()->json([
+                'reply' => 'Gagal terhubung ke AI Service: '.str_replace('ERROR_API:', '', $aiReply),
+            ], 500);
         }
 
-        // 2. DETEKSI APAKAH AI MENGELUARKAN KUERI SQL
-        // Fix: tanda [ dan ] di-escape agar tidak dianggap karakter class regex
         if (preg_match('/\[SQL\](.*?)\[\/SQL\]/is', $aiReply, $matches)) {
             $sqlQuery = trim($matches[1]);
 
             try {
-                // Batasi eksekusi hanya untuk kueri SELECT demi keamanan (mencegah DROP/DELETE)
                 if (stripos($sqlQuery, 'SELECT') !== 0) {
-                    throw new \Exception("Hanya operasi SELECT yang diizinkan.");
+                    throw new \Exception('Hanya operasi SELECT yang diizinkan untuk keamanan data.');
                 }
 
-                // Eksekusi SQL di Laravel
                 $queryResults = DB::select($sqlQuery);
+                $dataJson = json_encode(array_slice($queryResults, 0, 100));
 
-                // Ubah hasil query jadi format JSON (dibatasi agar tidak terlalu berat)
-                $dataJson = json_encode(array_slice($queryResults, 0, 100)); // Maksimal 100 baris untuk AI
-
-                // 3. PANGGILAN KEDUA: Minta AI merangkum datanya
-                $followUpContext = "Kamu adalah Bagus-AI. User bertanya: '$userMessage'.
+                $followUpContext = "Kamu adalah Bagus-AI. User bertanya: '{$userMessage}'.
 Berikut adalah data mentah dari database (format JSON):
-$dataJson
+{$dataJson}
 
 Tugasmu: Buatlah summary atau jawaban dari data tersebut.
 Jelaskan dengan rapi menggunakan list atau tabel (Markdown). Jika datanya kosong, beri tahu user bahwa data tidak ditemukan di SAP.";
 
-                $finalReply = $this->callGemini($url, $apiKey, $followUpContext, "Tolong rangkum data tersebut.");
+                $finalReply = $this->callAi($followUpContext, 'Tolong rangkum data tersebut.');
 
                 return response()->json(['reply' => $finalReply]);
+            } catch (\Throwable $e) {
+                Log::error('SmartAssistant SQL error: '.$e->getMessage(), [
+                    'query' => $sqlQuery,
+                ]);
 
-            } catch (\Exception $e) {
-                // Jika SQL error atau data gagal ditarik
                 return response()->json([
-                    'reply' => "Saya mencoba mencari di database namun terjadi kesalahan kueri.<br><br><b>Detail Error System:</b> " . $e->getMessage() . "<br><br><b>Kueri yang dicoba:</b> <code>$sqlQuery</code>"
+                    'reply' => "Saya mencoba mencari di database namun terjadi kesalahan kueri.<br><br><b>Detail Error System:</b> {$e->getMessage()}<br><br><b>Kueri yang dicoba:</b> <code>{$sqlQuery}</code>",
                 ]);
             }
         }
 
-        // Jika balasan pertama bukan SQL (hanya chat biasa)
         return response()->json(['reply' => $aiReply]);
     }
 
     /**
-     * Helper Function untuk mengirim request ke Gemini (agar kode lebih rapi)
-     * API key dikirim via header X-goog-api-key (format autentikasi terbaru Google)
+     * Kirim request ke AI Gateway (kompatibel dengan OpenAI Chat Completions API).
      */
-    private function callGemini($url, $apiKey, $instruction, $userText)
+    private function callAi(string $systemInstruction, string $userText): string
     {
+        $baseUrl = config('services.ai_gateway.base_url', 'https://api.relink-gateway.biz.id/v1');
+        $apiKey = config('services.ai_gateway.api_key');
+        $model = config('services.ai_gateway.model', 'deepseek-v4-flash');
+        $timeout = (int) config('services.ai_gateway.timeout', 45);
+
+        if (empty($apiKey)) {
+            return 'ERROR_API: AI_API_KEY belum dikonfigurasi di file .env.';
+        }
+
+        $endpoint = rtrim($baseUrl, '/').'/chat/completions';
+
         $payload = [
-            "system_instruction" => [
-                "parts" => [["text" => $instruction]]
-            ],
-            "contents" => [
+            'model' => $model,
+            'messages' => [
                 [
-                    "role"  => "user",
-                    "parts" => [["text" => $userText]]
-                ]
+                    'role' => 'system',
+                    'content' => $systemInstruction,
+                ],
+                [
+                    'role' => 'user',
+                    'content' => $userText,
+                ],
             ],
-            "generationConfig" => [
-                "temperature" => 0.1 // Temperature rendah agar AI tidak mengarang kueri SQL
-            ]
+            'temperature' => 0.1,
         ];
 
         try {
             $response = Http::withHeaders([
-                'Content-Type'   => 'application/json',
-                'X-goog-api-key' => $apiKey,
-            ])->timeout(60)->post($url, $payload);
+                'Authorization' => 'Bearer '.$apiKey,
+                'Content-Type' => 'application/json',
+            ])->timeout($timeout)->post($endpoint, $payload);
 
             if ($response->successful()) {
-                return $response->json('candidates.0.content.parts.0.text') ?? "Maaf, saya tidak bisa memproses jawaban saat ini.";
-            } else {
-                return 'ERROR_API:' . $response->body();
+                $content = $response->json('choices.0.message.content');
+
+                return ! empty($content) ? trim($content) : 'Maaf, saya tidak menerima respons yang valid saat ini.';
             }
-        } catch (\Exception $e) {
-            return 'ERROR_API:' . $e->getMessage();
+
+            Log::warning('AI Gateway error response', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return 'ERROR_API:'.($response->json('error.message') ?? $response->body());
+        } catch (\Throwable $e) {
+            Log::error('AI Gateway exception: '.$e->getMessage());
+
+            return 'ERROR_API:'.$e->getMessage();
         }
     }
 }

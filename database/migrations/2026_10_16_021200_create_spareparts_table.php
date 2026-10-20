@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up()
     {
-    Schema::create('spareparts', function (Blueprint $table) {
-        $table->id();
-        $table->string('part_id')->unique(); // Untuk SP0001
-        $table->string('sap_code')->nullable(); // Untuk 2559056
-        $table->string('part_name');
-        $table->timestamps();
-    });
+        Schema::create('spareparts', function (Blueprint $table) {
+            $table->id();
+            $table->string('part_id')->unique(); // Untuk SP0001
+            $table->string('sap_code')->nullable(); // Untuk 2559056
+            $table->string('part_name');
+            $table->timestamps();
+        });
     }
 
     /**

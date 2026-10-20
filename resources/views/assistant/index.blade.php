@@ -18,7 +18,7 @@
                     </div>
                     <div>
                         <h2 class="text-xl font-bold text-white">Smart Assistant</h2>
-                        <p class="text-xs text-green-400">Online - Gemini 3.8 Flash Connected</p>
+                        <p class="text-xs text-green-400">Online - Bagus-AI Connected</p>
                     </div>
                 </div>
 
@@ -48,8 +48,20 @@
         </div>
     </div>
 
-    <!-- Script AJAX untuk Chat -->
+    <!-- Script AJAX & Markdown untuk Chat -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .ai-content table { width: 100%; border-collapse: collapse; margin: 0.5rem 0; font-size: 0.85rem; }
+        .ai-content th, .ai-content td { border: 1px solid #37415C; padding: 6px 10px; text-align: left; }
+        .ai-content th { background-color: #1e263d; font-weight: 600; color: #93c5fd; }
+        .ai-content tr:nth-child(even) { background-color: rgba(255, 255, 255, 0.03); }
+        .ai-content ul { list-style-type: disc; padding-left: 1.25rem; margin: 0.5rem 0; }
+        .ai-content ol { list-style-type: decimal; padding-left: 1.25rem; margin: 0.5rem 0; }
+        .ai-content code { background-color: #111827; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.85em; color: #f472b6; }
+        .ai-content p { margin-bottom: 0.5rem; }
+        .ai-content p:last-child { margin-bottom: 0; }
+    </style>
     <script>
         $('#chat-form').submit(function(e) {
             e.preventDefault();
@@ -92,15 +104,15 @@
                 success: function(response) {
                     $('#' + loadingId).remove();
                     
-                    // Rapikan format Markdown dari Gemini (Bold dan Enter)
-                    let formattedReply = response.reply
-                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\n/g, '<br>');
+                    // Render Markdown secara rapi (Table, List, Bold, Code)
+                    let formattedReply = (typeof marked !== 'undefined')
+                        ? marked.parse(response.reply)
+                        : response.reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
 
                     $('#chat-box').append(`
                         <div class="flex items-start gap-3">
                             <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-xs shrink-0">🤖</div>
-                            <div class="bg-[#242E49] text-white p-3 rounded-2xl rounded-tl-none max-w-[80%] text-sm leading-relaxed">
+                            <div class="bg-[#242E49] text-white p-3 rounded-2xl rounded-tl-none max-w-[80%] text-sm leading-relaxed ai-content">
                                 ${formattedReply}
                             </div>
                         </div>

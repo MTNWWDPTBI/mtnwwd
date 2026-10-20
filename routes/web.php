@@ -1,20 +1,19 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ImportController;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\SparepartController;
-use App\Http\Controllers\MachineController;
-use App\Http\Controllers\AssemblyController;
 use App\Http\Controllers\AdminSparepartController;
-use App\Http\Controllers\TPMController;
-use App\Http\Controllers\HandoverController;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\AssemblyController;
 use App\Http\Controllers\ExportController;
-use App\Http\Controllers\WwdProjectController;
-use App\Models\WwdProject;
+use App\Http\Controllers\HandoverController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ImportController;
+use App\Http\Controllers\MachineController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SmartAssistantController;
+use App\Http\Controllers\SparepartController;
+use App\Http\Controllers\TPMController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\WwdProjectController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -26,11 +25,11 @@ Route::get('/dashboard', [HomeController::class, 'index'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    
+
     // ========================================================
     // ZONA UMUM (BISA DIAKSES OLEH ADMIN & TEKNISI)
     // ========================================================
-    
+
     // Profile User
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -53,20 +52,20 @@ Route::middleware('auth')->group(function () {
 
     // Rute untuk WWD Projects
     Route::resource('wwd-projects', WwdProjectController::class);
-    
+
     // Rute khusus untuk teknisi update detail checklist JSON
     Route::put('wwd-projects/details/{id}', [WwdProjectController::class, 'updateDetail'])
-         ->name('wwd-projects.details.update');
+        ->name('wwd-projects.details.update');
 
     // Rute Smart Assistant
-    Route::get('/smart-assistant', [App\Http\Controllers\SmartAssistantController::class, 'index'])->name('assistant.index');
-    Route::post('/smart-assistant/chat', [App\Http\Controllers\SmartAssistantController::class, 'chat'])->name('assistant.chat');
+    Route::get('/smart-assistant', [SmartAssistantController::class, 'index'])->name('assistant.index');
+    Route::post('/smart-assistant/chat', [SmartAssistantController::class, 'chat'])->name('assistant.chat');
 
     // ========================================================
     // ZONA KHUSUS ADMIN (DIGEMBOK MIDDLEWARE)
     // ========================================================
     Route::middleware('admin')->group(function () {
-        
+
         // Import Data Master dari Excel
         Route::get('/import-data', [ImportController::class, 'index'])->name('import.index');
         Route::post('/import-data', [ImportController::class, 'store'])->name('import.store');
@@ -94,11 +93,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/export/tpm', [ExportController::class, 'exportTpm'])->name('export.tpm');
         Route::get('/export/tpm-transactions', [ExportController::class, 'exportTpmTransactions'])->name('export.tpm.transactions');
         Route::get('/export/handover', [ExportController::class, 'exportHandover'])->name('export.handover');
-    
+
         // Rute Export Khusus Project WWD (Hanya Admin)
         Route::get('/export/wwd-project/{id}', [ExportController::class, 'exportWwdProject'])->name('export.wwd_project');
-    
-        });
+
+    });
 });
 
 require __DIR__.'/auth.php';

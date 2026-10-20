@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\TpmPart;
 use App\Models\TpmTransaction;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class TPMController extends Controller
@@ -13,6 +13,7 @@ class TPMController extends Controller
     public function index()
     {
         $tpmParts = TpmPart::orderBy('tpm_part_number')->get();
+
         return view('tpm.index', compact('tpmParts'));
     }
 
@@ -35,7 +36,7 @@ class TPMController extends Controller
         if ($latestPart && str_starts_with($latestPart->tpm_part_number, '999')) {
             // Ambil angka setelah '999' dan tambah 1
             $lastNumber = (int) substr($latestPart->tpm_part_number, 3);
-            $newNumber = '999' . ($lastNumber + 1);
+            $newNumber = '999'.($lastNumber + 1);
         } else {
             $newNumber = '9991'; // Awalan jika tabel masih kosong
         }
@@ -46,7 +47,7 @@ class TPMController extends Controller
             'location' => strtoupper(trim($request->location)),
             'stock' => 0, // Stok awal selalu 0
             'min_stock' => $request->min_stock,
-            'max_stock' => $request->max_stock
+            'max_stock' => $request->max_stock,
         ]);
 
         return redirect()->route('tpm.index')->with('success', "Barang TPM baru berhasil didaftarkan dengan kode Barcode: $newNumber");
@@ -70,7 +71,7 @@ class TPMController extends Controller
         $part = TpmPart::where('tpm_part_number', $request->tpm_part_number)->first();
 
         // Cek jika teknisi scan barcode yang tidak terdaftar
-        if (!$part) {
+        if (! $part) {
             return back()->with('error', 'GAGAL! Part dengan barcode tersebut tidak ditemukan di database TPM!');
         }
 
@@ -98,17 +99,19 @@ class TPMController extends Controller
         });
 
         $status = $request->transaction_type == 'IN' ? 'ditambahkan' : 'diambil';
+
         return back()->with('success', "BERHASIL! Stok {$part->name} berhasil $status sebanyak {$request->qty}. (Sisa Stok Sekarang: {$part->stock})");
     }
-        // 6. Hapus Barang TPM secara permanen
-        public function destroy($id)
-        {
+
+    // 6. Hapus Barang TPM secara permanen
+    public function destroy($id)
+    {
         $part = TpmPart::findOrFail($id);
         $namaPart = $part->name;
-        
+
         // Hapus part (history transaksi akan ikut terhapus otomatis karena cascade)
         $part->delete();
 
         return redirect()->route('tpm.index')->with('success', "Barang TPM '{$namaPart}' berhasil dihapus secara permanen.");
-        }
+    }
 }

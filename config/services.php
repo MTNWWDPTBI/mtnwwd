@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'ai_gateway' => [
+        'base_url' => env('AI_GATEWAY_URL', 'https://api.relink-gateway.biz.id/v1'),
+        'api_key' => env('AI_API_KEY'),
+        'model' => env('AI_MODEL', 'deepseek-v4-flash'),
+        'timeout' => (int) env('AI_TIMEOUT', 45),
+    ],
+
 ];

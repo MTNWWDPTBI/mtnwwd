@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\Assembly;
+use App\Models\Handover;
 use App\Models\Machine;
 use App\Models\Sparepart;
-use App\Models\Assembly;
-use App\Models\TpmPart; 
-use App\Models\WwdProject; 
-use App\Models\Handover;
+use App\Models\TpmPart;
+use App\Models\WwdProject;
 
 class HomeController extends Controller
 {
@@ -26,10 +25,10 @@ class HomeController extends Controller
 
         // 2. Statistik ringkasan untuk kartu metrik Material Design
         $stats = [
-            'total_machines'    => $machines->count(),
-            'total_assemblies'  => Assembly::count(),
-            'total_spareparts'  => Sparepart::count(),
-            'total_locations'   => Sparepart::whereNotNull('bin_location')->where('bin_location', '!=', '')->count(),
+            'total_machines' => $machines->count(),
+            'total_assemblies' => Assembly::count(),
+            'total_spareparts' => Sparepart::count(),
+            'total_locations' => Sparepart::whereNotNull('bin_location')->where('bin_location', '!=', '')->count(),
         ];
 
         // 3. Ambil barang TPM yang stoknya <= min_stock
@@ -40,7 +39,7 @@ class HomeController extends Controller
             'details as total_machines',
             'details as closed_machines' => function ($query) {
                 $query->where('status', 'CLOSE');
-            }
+            },
         ])->latest()->take(4)->get();
 
         // 2. TAMBAHKAN KODE INI: Ambil 4 Handover terbaru yang masih OPEN
@@ -49,7 +48,4 @@ class HomeController extends Controller
         // 3. JANGAN LUPA: Tambahkan 'openHandovers' ke dalam compact
         return view('dashboard', compact('stats', 'machines', 'lowStockTpmParts', 'wwdProjects', 'openHandovers'));
     }
-    
-    
-    
 }

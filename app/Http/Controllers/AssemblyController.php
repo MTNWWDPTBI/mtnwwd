@@ -12,12 +12,14 @@ class AssemblyController extends Controller
     {
         // Memuat data assembly beserta nama mesin induknya
         $assemblies = Assembly::with('machine')->orderBy('machine_id')->paginate(10);
+
         return view('assemblies.index', compact('assemblies'));
     }
 
     public function create()
     {
         $machines = Machine::orderBy('machine_name')->get();
+
         return view('assemblies.create', compact('machines'));
     }
 
@@ -26,16 +28,18 @@ class AssemblyController extends Controller
         $request->validate([
             'machine_id' => 'required|exists:machines,id',
             'assembly_code' => 'required|unique:assemblies,assembly_code',
-            'assembly_name' => 'required'
+            'assembly_name' => 'required',
         ]);
 
         Assembly::create($request->all());
+
         return redirect()->route('assemblies.index')->with('success', 'Assembly berhasil ditambahkan.');
     }
 
     public function edit(Assembly $assembly)
     {
         $machines = Machine::orderBy('machine_name')->get();
+
         return view('assemblies.edit', compact('assembly', 'machines'));
     }
 
@@ -43,11 +47,12 @@ class AssemblyController extends Controller
     {
         $request->validate([
             'machine_id' => 'required|exists:machines,id',
-            'assembly_code' => 'required|unique:assemblies,assembly_code,' . $assembly->id,
-            'assembly_name' => 'required'
+            'assembly_code' => 'required|unique:assemblies,assembly_code,'.$assembly->id,
+            'assembly_name' => 'required',
         ]);
 
         $assembly->update($request->all());
+
         return redirect()->route('assemblies.index')->with('success', 'Data assembly berhasil diperbarui.');
     }
 
@@ -55,6 +60,7 @@ class AssemblyController extends Controller
     {
         try {
             $assembly->delete();
+
             return redirect()->route('assemblies.index')->with('success', 'Assembly berhasil dihapus.');
         } catch (\Exception $e) {
             return redirect()->route('assemblies.index')->withErrors(['error' => 'Gagal menghapus! Assembly ini masih memiliki Sparepart yang terhubung.']);

@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up()
     {
-    Schema::create('assemblies', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('machine_id')->constrained()->cascadeOnDelete();
-        $table->string('assembly_code'); // Untuk AS001, dll
-        $table->string('assembly_name');
-        $table->timestamps();
-    });
+        Schema::create('assemblies', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('machine_id')->constrained()->cascadeOnDelete();
+            $table->string('assembly_code'); // Untuk AS001, dll
+            $table->string('assembly_name');
+            $table->timestamps();
+        });
     }
 
     /**

@@ -21,7 +21,7 @@ class Machine extends Model
 
     public function getImageUrlAttribute()
     {
-        if (!empty($this->image)) {
+        if (! empty($this->image)) {
             if (filter_var($this->image, FILTER_VALIDATE_URL)) {
                 return $this->image;
             }
@@ -36,6 +36,6 @@ class Machine extends Model
             return asset("images/machines/{$code}.svg");
         }
 
-        return asset("images/machines/default.svg");
+        return asset('images/machines/default.svg');
     }
 }

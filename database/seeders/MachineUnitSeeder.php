@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Machine;
 use App\Models\MachineUnit;
+use Illuminate\Database\Seeder;
 
 class MachineUnitSeeder extends Seeder
 {
@@ -12,8 +12,9 @@ class MachineUnitSeeder extends Seeder
     {
         $file = storage_path('app/mesin.csv');
 
-        if (!file_exists($file)) {
-            $this->command->error("GAGAL: File mesin.csv tidak ditemukan di folder storage/app/");
+        if (! file_exists($file)) {
+            $this->command->error('GAGAL: File mesin.csv tidak ditemukan di folder storage/app/');
+
             return;
         }
 
@@ -24,23 +25,25 @@ class MachineUnitSeeder extends Seeder
 
         // Kamus Penerjemah (Mapping) dari nama Excel ke nama di tabel 'machines'
         $typeMapping = [
-            'SHX'        => 'SHX',
+            'SHX' => 'SHX',
             'NDE-SC2007' => 'NDE',
-            'NDE-SW'     => 'NDE',
-            'NDE RF'     => 'NDE',
+            'NDE-SW' => 'NDE',
+            'NDE RF' => 'NDE',
             'NDB TRITON' => 'NDB TRITON',
-            'NDB ONO'    => 'NDB ONO',
-            'NDB ONTRI'  => 'NDB TRITON', 
+            'NDB ONO' => 'NDB ONO',
+            'NDB ONTRI' => 'NDB TRITON',
             'NDE-SC2003' => 'NDE',
-            'NDB ONB'    => 'NDB ONB',
-            'NDB MOT'    => 'NDE-MOT', 
+            'NDB ONB' => 'NDB ONB',
+            'NDB MOT' => 'NDE-MOT',
         ];
 
         $insertedCount = 0;
 
         foreach ($data as $row) {
             // Skip baris kosong atau tidak valid
-            if (count($row) < 2 || empty(trim($row[0]))) continue;
+            if (count($row) < 2 || empty(trim($row[0]))) {
+                continue;
+            }
 
             $machineNumber = trim($row[0]);
             $excelType = trim($row[1]);
@@ -57,7 +60,7 @@ class MachineUnitSeeder extends Seeder
                     ['machine_number' => $machineNumber],
                     [
                         'machine_id' => $machine->id,
-                        'status' => 'ACTIVE'
+                        'status' => 'ACTIVE',
                     ]
                 );
                 $insertedCount++;

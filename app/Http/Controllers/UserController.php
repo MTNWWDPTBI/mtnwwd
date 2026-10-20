@@ -13,6 +13,7 @@ class UserController extends Controller
     public function index()
     {
         $users = User::orderBy('role')->orderBy('name')->get();
+
         return view('users.index', compact('users'));
     }
 
@@ -51,6 +52,7 @@ class UserController extends Controller
         }
 
         $user->delete();
+
         return redirect()->route('users.index')->with('success', 'Akun berhasil dihapus permanen.');
     }
 }

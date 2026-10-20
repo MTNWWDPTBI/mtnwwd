@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use Illuminate\Support\Facades\DB;
-use App\Models\Machine;
 use App\Models\Assembly;
-use App\Models\Sparepart;
 use App\Models\AssemblySparepart;
-use App\Models\SapHistory; // <-- 1. Tambahkan ini
-use Carbon\Carbon;         // <-- 2. Tambahkan ini
+use App\Models\Machine;
+use App\Models\SapHistory;
+use App\Models\Sparepart;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB; // <-- 1. Tambahkan ini
+use PhpOffice\PhpSpreadsheet\IOFactory;         // <-- 2. Tambahkan ini
 
 class ImportController extends Controller
 {
@@ -22,7 +22,7 @@ class ImportController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'file_excel' => 'required|mimes:xlsx,xls'
+            'file_excel' => 'required|mimes:xlsx,xls',
         ]);
 
         try {
@@ -36,7 +36,9 @@ class ImportController extends Controller
             if ($machineSheet) {
                 $rows = $machineSheet->toArray(null, true, true, true);
                 foreach ($rows as $index => $row) {
-                    if ($index == 1 || empty($row['A'])) continue; // Lewati header atau baris kosong
+                    if ($index == 1 || empty($row['A'])) {
+                        continue;
+                    } // Lewati header atau baris kosong
                     Machine::updateOrCreate(
                         ['machine_code' => $row['A']], // Cari berdasarkan ID
                         ['machine_name' => $row['B']]
@@ -49,7 +51,9 @@ class ImportController extends Controller
             if ($assemblySheet) {
                 $rows = $assemblySheet->toArray(null, true, true, true);
                 foreach ($rows as $index => $row) {
-                    if ($index == 1 || empty($row['A'])) continue;
+                    if ($index == 1 || empty($row['A'])) {
+                        continue;
+                    }
                     $machine = Machine::where('machine_code', $row['C'])->first();
                     if ($machine) {
                         Assembly::updateOrCreate(
@@ -65,14 +69,16 @@ class ImportController extends Controller
             if ($sparepartSheet) {
                 $rows = $sparepartSheet->toArray(null, true, true, true);
                 foreach ($rows as $index => $row) {
-                    if ($index == 1 || empty($row['A'])) continue;
-                    
+                    if ($index == 1 || empty($row['A'])) {
+                        continue;
+                    }
+
                     Sparepart::updateOrCreate(
                         ['part_id' => trim($row['A'])], // Gunakan trim agar kebal spasi
                         [
-                            'sap_code' => trim($row['B']), 
+                            'sap_code' => trim($row['B']),
                             'part_name' => trim($row['C']),
-                            'bin_location' => isset($row['D']) ? trim($row['D']) : null // Gunakan trim
+                            'bin_location' => isset($row['D']) ? trim($row['D']) : null, // Gunakan trim
                         ]
                     );
                 }
@@ -87,11 +93,13 @@ class ImportController extends Controller
 
                 $rows = $bomSheet->toArray(null, true, true, true);
                 foreach ($rows as $index => $row) {
-                    if ($index == 1 || empty($row['A']) || empty($row['D'])) continue;
-                    
+                    if ($index == 1 || empty($row['A']) || empty($row['D'])) {
+                        continue;
+                    }
+
                     $assemblyCode = trim($row['A']);
                     $partId = trim($row['D']);
-                    
+
                     // PERBAIKAN KECIL: Gunakan variabel $assemblyCode & $partId yang sudah di-trim agar pencarian akurat
                     $assembly = Assembly::where('assembly_code', $assemblyCode)->first();
                     $sparepart = Sparepart::where('part_id', $partId)->first();
@@ -99,11 +107,11 @@ class ImportController extends Controller
                     if ($assembly && $sparepart) {
                         // Karena tabel sudah dikosongkan dengan truncate, kita bisa langsung create atau tetap pakai updateorticreate
                         AssemblySparepart::create([
-                            'assembly_id' => $assembly->id, 
+                            'assembly_id' => $assembly->id,
                             'sparepart_id' => $sparepart->id,
-                            'qty' => $row['E'], 
+                            'qty' => $row['E'],
                             'unit' => $row['F'] ?? 'pc',
-                            'description' => $row['G'] ?? null
+                            'description' => $row['G'] ?? null,
                         ]);
                     }
                 }
@@ -113,11 +121,13 @@ class ImportController extends Controller
 
             // Jika semua lancar, simpan ke database permanen
             DB::commit();
+
             return back()->with('success', 'Selamat! Seluruh data Excel berhasil masuk ke Database.');
 
         } catch (\Exception $e) {
             DB::rollBack(); // Batalkan jika ada error
-            return back()->withErrors(['file_excel' => 'Gagal memproses data: ' . $e->getMessage()]);
+
+            return back()->withErrors(['file_excel' => 'Gagal memproses data: '.$e->getMessage()]);
         }
     }
 
@@ -129,10 +139,10 @@ class ImportController extends Controller
         // Cegah timeout dan kehabisan memori untuk ribuan baris
         ini_set('max_execution_time', 300);
         ini_set('memory_limit', '-1');
-    
+
         // Validasi file (longgarkan mimes agar aman di Windows)
         $request->validate([
-            'file' => 'required'
+            'file' => 'required',
         ]);
 
         $file = $request->file('file');
@@ -143,36 +153,44 @@ class ImportController extends Controller
         }
 
         $fileHandle = fopen($file->getPathname(), 'r');
-        
+
         // Deteksi delimiter otomatis (koma atau titik koma)
         $firstLine = fgets($fileHandle);
         $delimiter = strpos($firstLine, ';') !== false ? ';' : ',';
         rewind($fileHandle);
-        
+
         fgetcsv($fileHandle, 10000, $delimiter); // Lewati baris header
-        
+
         $dataToInsert = [];
-        
+
         // Fungsi helper untuk membersihkan spasi berlebih
-        $cleanText = function($val) {
-            if ($val === null || $val === '') return null;
+        $cleanText = function ($val) {
+            if ($val === null || $val === '') {
+                return null;
+            }
+
             return trim($val);
         };
 
         // Fungsi helper untuk membersihkan angka (ubah koma desimal jadi titik)
-        $cleanNumber = function($val) {
+        $cleanNumber = function ($val) {
             $val = trim($val ?? '');
-            if ($val === '') return null;
+            if ($val === '') {
+                return null;
+            }
+
             return str_replace(',', '.', $val);
         };
 
         while (($row = fgetcsv($fileHandle, 10000, $delimiter)) !== false) {
             // Lewati jika baris tersebut benar-benar kosong
-            if (count(array_filter($row)) === 0) continue; 
+            if (count(array_filter($row)) === 0) {
+                continue;
+            }
 
             // Parsing tanggal (aman jika formatnya berantakan)
             $dateParsed = null;
-            if (!empty($row[2])) {
+            if (! empty($row[2])) {
                 try {
                     $dateParsed = Carbon::parse($row[2])->format('Y-m-d');
                 } catch (\Exception $e) {
@@ -181,37 +199,37 @@ class ImportController extends Controller
             }
 
             $dataToInsert[] = [
-                'month'               => $cleanText($row[0] ?? null),
-                'week'                => $cleanText($row[1] ?? null),
-                'date'                => $dateParsed,
-                'cat'                 => $cleanText($row[3] ?? null),
-                'type'                => $cleanText($row[4] ?? null),
-                'plant'               => $cleanText($row[5] ?? null),
-                'area'                => $cleanText($row[6] ?? null),
-                'dept'                => $cleanText($row[7] ?? null),
+                'month' => $cleanText($row[0] ?? null),
+                'week' => $cleanText($row[1] ?? null),
+                'date' => $dateParsed,
+                'cat' => $cleanText($row[3] ?? null),
+                'type' => $cleanText($row[4] ?? null),
+                'plant' => $cleanText($row[5] ?? null),
+                'area' => $cleanText($row[6] ?? null),
+                'dept' => $cleanText($row[7] ?? null),
                 'functional_location' => $cleanText($row[8] ?? null),
-                'indicator'           => $cleanText($row[9] ?? null),
-                'maint_order'         => $cleanText($row[10] ?? null),
-                'maint_order_desc'    => $cleanText($row[11] ?? null),
-                'code_cause'          => $cleanText($row[12] ?? null),
-                'error_code'          => $cleanText($row[13] ?? null),
-                'creator'             => $cleanText($row[14] ?? null),
-                'executor'            => $cleanText($row[15] ?? null),
-                'code_group'          => $cleanText($row[16] ?? null),
-                'object_part'         => $cleanText($row[17] ?? null),
-                'problem'             => $cleanText($row[18] ?? null),
-                'activity'            => $cleanText($row[19] ?? null),
-                'status'              => $cleanText($row[20] ?? null),
-                'confirmation_text'   => $cleanText($row[21] ?? null),
-                
+                'indicator' => $cleanText($row[9] ?? null),
+                'maint_order' => $cleanText($row[10] ?? null),
+                'maint_order_desc' => $cleanText($row[11] ?? null),
+                'code_cause' => $cleanText($row[12] ?? null),
+                'error_code' => $cleanText($row[13] ?? null),
+                'creator' => $cleanText($row[14] ?? null),
+                'executor' => $cleanText($row[15] ?? null),
+                'code_group' => $cleanText($row[16] ?? null),
+                'object_part' => $cleanText($row[17] ?? null),
+                'problem' => $cleanText($row[18] ?? null),
+                'activity' => $cleanText($row[19] ?? null),
+                'status' => $cleanText($row[20] ?? null),
+                'confirmation_text' => $cleanText($row[21] ?? null),
+
                 // Casting data angka
-                'notfis'              => is_numeric($cleanNumber($row[22] ?? '')) ? (int) $cleanNumber($row[22]) : null,
-                'response_hrs'        => is_numeric($cleanNumber($row[23] ?? '')) ? (float) $cleanNumber($row[23]) : null,
-                'actual_hrs'          => is_numeric($cleanNumber($row[24] ?? '')) ? (float) $cleanNumber($row[24]) : null,
-                'bm_hrs'              => is_numeric($cleanNumber($row[25] ?? '')) ? (float) $cleanNumber($row[25]) : null,
-                
-                'created_at'          => now()->toDateTimeString(),
-                'updated_at'          => now()->toDateTimeString(),
+                'notfis' => is_numeric($cleanNumber($row[22] ?? '')) ? (int) $cleanNumber($row[22]) : null,
+                'response_hrs' => is_numeric($cleanNumber($row[23] ?? '')) ? (float) $cleanNumber($row[23]) : null,
+                'actual_hrs' => is_numeric($cleanNumber($row[24] ?? '')) ? (float) $cleanNumber($row[24]) : null,
+                'bm_hrs' => is_numeric($cleanNumber($row[25] ?? '')) ? (float) $cleanNumber($row[25]) : null,
+
+                'created_at' => now()->toDateTimeString(),
+                'updated_at' => now()->toDateTimeString(),
             ];
         }
         fclose($fileHandle);
@@ -222,12 +240,12 @@ class ImportController extends Controller
             foreach ($chunks as $chunk) {
                 SapHistory::insert($chunk);
             }
-            
-            return back()->with('success', count($dataToInsert) . ' Baris Data History SAP berhasil di-import!');
-            
-        } catch (\Throwable $e) { 
+
+            return back()->with('success', count($dataToInsert).' Baris Data History SAP berhasil di-import!');
+
+        } catch (\Throwable $e) {
             // Menangkap semua bentuk error MySQL
-            return back()->with('error', 'Terjadi error saat menyimpan ke MySQL: ' . $e->getMessage());
+            return back()->with('error', 'Terjadi error saat menyimpan ke MySQL: '.$e->getMessage());
         }
-    } 
+    }
 }

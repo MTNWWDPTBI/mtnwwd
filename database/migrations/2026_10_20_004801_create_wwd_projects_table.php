@@ -10,11 +10,11 @@ return new class extends Migration
     {
         Schema::create('wwd_projects', function (Blueprint $table) {
             $table->id();
-            $table->string('project_name'); 
-            $table->text('description')->nullable(); 
-            $table->string('pic_leader')->nullable(); 
+            $table->string('project_name');
+            $table->text('description')->nullable();
+            $table->string('pic_leader')->nullable();
             $table->date('target_date')->nullable();
-            $table->json('column_headers')->nullable(); 
+            $table->json('column_headers')->nullable();
             $table->enum('status', ['OPEN', 'ON PROGRESS', 'CLOSED'])->default('OPEN');
             $table->timestamps();
         });
@@ -23,7 +23,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('wwd_project_id')->constrained('wwd_projects')->onDelete('cascade');
             $table->foreignId('machine_unit_id')->constrained('machine_units')->onDelete('cascade');
-            $table->json('dynamic_data')->nullable(); 
+            $table->json('dynamic_data')->nullable();
             $table->enum('status', ['OPEN', 'COMPLETION', 'CLOSE'])->default('OPEN');
             $table->timestamps();
         });

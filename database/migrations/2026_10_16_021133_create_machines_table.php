@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up()
     {
-    Schema::create('machines', function (Blueprint $table) {
-        $table->id();
-        $table->string('machine_code')->unique(); // Untuk MC001, dll
-        $table->string('machine_name');
-        $table->timestamps();
+        Schema::create('machines', function (Blueprint $table) {
+            $table->id();
+            $table->string('machine_code')->unique(); // Untuk MC001, dll
+            $table->string('machine_name');
+            $table->timestamps();
         });
     }
 

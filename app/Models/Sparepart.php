@@ -10,12 +10,12 @@ class Sparepart extends Model
     use HasFactory;
 
     protected $fillable = ['part_id', 'sap_code', 'part_name', 'bin_location'];
-    
+
     // Relasi ke Assembly melalui tabel pivot assembly_spareparts (BOM)
     public function assemblies()
     {
         return $this->belongsToMany(Assembly::class, 'assembly_spareparts', 'sparepart_id', 'assembly_id')
-                    ->withPivot('qty', 'unit', 'description');
+            ->withPivot('qty', 'unit', 'description');
     }
 
     // Relasi ke stok TPM (Satu sparepart bisa ada di banyak lokasi TPM)
@@ -29,7 +29,7 @@ class Sparepart extends Model
     {
         return $this->hasMany(TpmTransaction::class, 'sparepart_id');
     }
-    
+
     public function inventory()
     {
         return $this->hasOne(Inventory::class);
