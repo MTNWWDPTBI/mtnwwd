@@ -11,6 +11,6 @@ class Handover extends Model
 
     protected $fillable = [
         'handover_date', 'shift', 'team', 'machine_name', 'problem_description',
-        'status', 'reported_by', 'resolved_by', 'resolved_at',
+        'status', 'reported_by', 'resolved_by', 'resolved_at', 'lototo_status',
     ];
 }

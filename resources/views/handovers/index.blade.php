@@ -49,6 +49,7 @@
                             <th class="px-3 py-3 sm:px-6 sm:py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#FDA481] whitespace-nowrap">Tgl, Shift & Tim</th>
                             <th class="px-3 py-3 sm:px-6 sm:py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#FDA481] whitespace-nowrap">Mesin</th>
                             <th class="px-3 py-3 sm:px-6 sm:py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#FDA481] min-w-[200px]">Detail Problem</th>
+                            <th class="px-3 py-3 sm:px-6 sm:py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#FDA481] text-center whitespace-nowrap">LOTOTO</th>
                             <th class="px-3 py-3 sm:px-6 sm:py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#FDA481] text-center whitespace-nowrap">Status & Pelapor</th>
                             <th class="px-3 py-3 sm:px-6 sm:py-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#FDA481] text-center whitespace-nowrap">Aksi Lanjutan</th>
                         </tr>
@@ -71,6 +72,25 @@
                                     {{ $log->problem_description }}
                                 </div>
                             </td>
+                            <!-- Kolom Status LOTOTO -->
+                            <td class="px-3 py-3 sm:px-6 sm:py-4 text-center whitespace-nowrap">
+                                @if($log->lototo_status === 'Sudah')
+                                    <span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-[#FDA481]/15 text-[#FDA481] border border-[#FDA481]/30 shadow-sm">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        SUDAH
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-[#B4182D]/20 text-red-400 border border-[#B4182D]/50 shadow-sm animate-pulse">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                        BELUM
+                                    </span>
+                                @endif
+                            </td>
+                            <!-- Selesai Kolom LOTOTO -->
                             <td class="px-3 py-3 sm:px-6 sm:py-4 text-center whitespace-nowrap">
                                 @if($log->status == 'OPEN')
                                     <span class="inline-flex items-center px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 mb-1">
@@ -99,7 +119,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="px-3 py-8 sm:py-12 text-center text-slate-400 italic text-xs">Belum ada catatan logbook.</td>
+                            <td colspan="6" class="px-3 py-8 sm:py-12 text-center text-slate-400 italic text-xs">Belum ada catatan logbook.</td>
                         </tr>
                         @endforelse
                     </tbody>

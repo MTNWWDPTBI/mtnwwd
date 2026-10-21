@@ -34,6 +34,7 @@ class HandoverController extends Controller
             'team' => 'required|in:A,B,C,D', // Tambahan validasi tim
             'machine_name' => 'required|string|max:255',
             'problem_description' => 'required|string',
+            'lototo_status' => 'required|in:Sudah,Belum',
         ]);
 
         Handover::create([
@@ -42,6 +43,7 @@ class HandoverController extends Controller
             'team' => $request->team, // Simpan data tim
             'machine_name' => strtoupper(trim($request->machine_name)),
             'problem_description' => $request->problem_description,
+            'lototo_status' => $request->lototo_status,
             'status' => 'OPEN',
             'reported_by' => auth()->user()->name ?? 'Teknisi',
         ]);
