@@ -3,17 +3,32 @@
 namespace App\Http\Controllers;
 
 use App\Models\Handover;
-use App\Models\TPMPart;
+use App\Models\TpmPart;
 use App\Models\WwdProject;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
 class ExportController extends Controller
 {
     // 1. Export Data Stok TPM ke Format Excel (.xls)
-    public function exportTpm()
+    public function exportTpm(Request $request): Response
     {
-        $fileName = 'Laporan_Stok_TPM_'.date('Y-m-d').'.xls';
-        $parts = TPMPart::all();
+        $location = $request->query('location');
+
+        $query = TpmPart::query();
+
+        if ($request->filled('location')) {
+            $query->where('location', $location);
+            $safeLocation = preg_replace('/[^A-Za-z0-9_-]/', '_', $location);
+            $fileName = 'Laporan_Stok_TPM_'.$safeLocation.'_'.date('Y-m-d').'.xls';
+            $title = 'Laporan Stok Barang TPM - Lokasi: '.htmlspecialchars($location);
+        } else {
+            $fileName = 'Laporan_Stok_TPM_'.date('Y-m-d').'.xls';
+            $title = 'Laporan Stok Barang TPM (Semua Lokasi)';
+        }
+
+        $parts = $query->orderBy('location')->orderBy('tpm_part_number')->get();
 
         $headers = [
             'Content-type' => 'application/vnd.ms-excel',
@@ -26,7 +41,7 @@ class ExportController extends Controller
         $html = '<html lang="id">
         <head><meta charset="UTF-8"></head>
         <body>
-            <h3 style="color: #333;">Laporan Stok Barang TPM</h3>
+            <h3 style="color: #333;">'.$title.'</h3>
             <table border="1" style="border-collapse: collapse; width: 100%;">
                 <thead>
                     <tr style="background-color: #242E49; color: #FDA481; text-align: center; font-weight: bold;">
@@ -43,7 +58,7 @@ class ExportController extends Controller
 
         foreach ($parts as $part) {
             $html .= '<tr>
-                <td style="mso-number-format:\@;">'.$part->tpm_part_id.'</td>
+                <td style="mso-number-format:\@;">'.htmlspecialchars($part->tpm_part_number).'</td>
                 <td>'.htmlspecialchars($part->name).'</td>
                 <td style="text-align: center;">'.htmlspecialchars($part->location).'</td>
                 <td style="text-align: center;">'.$part->min_stock.'</td>
@@ -100,8 +115,7 @@ class ExportController extends Controller
                 <tbody>';
 
         foreach ($logs as $log) {
-            // Menggunakan tpm_part_id sesuai struktur database-mu
-            $partId = $log->tpm_part_id ?? ($log->part_id ?? '-');
+            $partId = $log->tpm_part_number ?? ($log->tpm_part_id ?? '-');
             $itemName = $log->item_name ?? ($log->name ?? '-');
             $typeName = $log->transaction_type ?? ($log->type ?? 'IN');
             $qtyVal = $log->qty ?? ($log->quantity ?? 0);
@@ -162,7 +176,7 @@ class ExportController extends Controller
 
         foreach ($handovers as $log) {
             $statusColor = $log->status == 'OPEN' ? 'color: red; font-weight: bold;' : 'color: green; font-weight: bold;';
-            
+
             // Tambahkan Pewarnaan untuk LOTOTO
             $lototoColor = $log->lototo_status == 'Sudah' ? 'color: green; font-weight: bold;' : 'color: red; font-weight: bold;';
 

@@ -71,14 +71,14 @@
 
                         <!-- Input LOTOTO Checkin/Checkout -->
                     <div class="mb-4">
-                        <label class="block mb-2 text-sm font-medium text-slate-300">LOTOTO Checkin/Checkout</label>
+                        <label class="block mb-2 text-xs font-bold uppercase tracking-wider text-[#FDA481]">LOTOTO Checkin/Checkout</label>
                         <div class="flex items-center gap-6 p-3 border rounded-xl bg-[#181A2F]/50 border-[#37415C]/60">
                             
                             <!-- Pilihan Sudah -->
                             <label class="flex items-center gap-3 cursor-pointer group">
                                 <div class="relative flex items-center justify-center">
-                                    <input type="radio" name="lototo_status" value="Sudah" 
-                                        class="w-5 h-5 transition duration-200 border-2 appearance-none rounded-full border-slate-500 bg-[#242E49] checked:border-[#FDA481] cursor-pointer" required>
+                                    <input type="radio" name="lototo_status" value="Sudah" {{ old('lototo_status') === 'Sudah' ? 'checked' : '' }}
+                                        class="peer w-5 h-5 transition duration-200 border-2 appearance-none rounded-full border-slate-500 bg-[#242E49] checked:border-[#FDA481] cursor-pointer" required>
                                     <div class="absolute inset-0 w-3 h-3 m-auto rounded-full bg-[#FDA481] scale-0 opacity-0 transition-transform duration-200 peer-checked:scale-100 peer-checked:opacity-100"></div>
                                 </div>
                                 <span class="text-sm font-semibold transition-colors text-slate-300 group-hover:text-white">Sudah</span>
@@ -87,8 +87,8 @@
                             <!-- Pilihan Belum -->
                             <label class="flex items-center gap-3 cursor-pointer group">
                                 <div class="relative flex items-center justify-center">
-                                    <input type="radio" name="lototo_status" value="Belum" 
-                                        class="w-5 h-5 transition duration-200 border-2 appearance-none rounded-full border-slate-500 bg-[#242E49] checked:border-[#B4182D] cursor-pointer" required>
+                                    <input type="radio" name="lototo_status" value="Belum" {{ old('lototo_status', 'Belum') === 'Belum' ? 'checked' : '' }}
+                                        class="peer w-5 h-5 transition duration-200 border-2 appearance-none rounded-full border-slate-500 bg-[#242E49] checked:border-[#B4182D] cursor-pointer" required>
                                     <div class="absolute inset-0 w-3 h-3 m-auto rounded-full bg-[#B4182D] scale-0 opacity-0 transition-transform duration-200 peer-checked:scale-100 peer-checked:opacity-100"></div>
                                 </div>
                                 <span class="text-sm font-semibold transition-colors text-slate-300 group-hover:text-white">Belum</span>

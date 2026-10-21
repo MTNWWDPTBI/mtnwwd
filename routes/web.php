@@ -13,6 +13,7 @@ use App\Http\Controllers\SparepartController;
 use App\Http\Controllers\TPMController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WwdProjectController;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -60,6 +61,8 @@ Route::middleware('auth')->group(function () {
     // Rute Smart Assistant
     Route::get('/smart-assistant', [SmartAssistantController::class, 'index'])->name('assistant.index');
     Route::post('/smart-assistant/chat', [SmartAssistantController::class, 'chat'])->name('assistant.chat');
+    Route::post('/smart-assistant/clear', [SmartAssistantController::class, 'clearHistory'])->name('assistant.clear');
+    Route::get('/smart-assistant/history', [SmartAssistantController::class, 'getHistory'])->name('assistant.history');
 
     // ========================================================
     // ZONA KHUSUS ADMIN (DIGEMBOK MIDDLEWARE)
@@ -96,6 +99,14 @@ Route::middleware('auth')->group(function () {
 
         // Rute Export Khusus Project WWD (Hanya Admin)
         Route::get('/export/wwd-project/{id}', [ExportController::class, 'exportWwdProject'])->name('export.wwd_project');
+
+        // Jalankan Migrasi Database via Web Browser (Khusus Admin, tanpa perlu SSH / terminal Hostinger)
+        Route::get('/admin/run-migrate', function () {
+            Artisan::call('migrate', ['--force' => true]);
+            $output = Artisan::output();
+
+            return response("<pre style='background:#0f172a;color:#38bdf8;padding:24px;border-radius:8px;font-family:monospace;font-size:14px;line-height:1.5;'>🚀 <strong>DATABASE MIGRATION COMPLETED</strong><br><br>".e($output).'</pre>');
+        })->name('admin.migrate');
 
     });
 });

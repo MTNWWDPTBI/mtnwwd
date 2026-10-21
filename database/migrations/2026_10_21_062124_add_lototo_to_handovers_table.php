@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('handovers', function (Blueprint $table) {
-            // Menambahkan kolom enum setelah kolom 'problem' atau sesuaikan posisinya
-            $table->enum('lototo_status', ['Sudah', 'Belum'])->default('Belum')->after('problem_description');
-        });
+        if (Schema::hasTable('handovers') && ! Schema::hasColumn('handovers', 'lototo_status')) {
+            Schema::table('handovers', function (Blueprint $table) {
+                $table->enum('lototo_status', ['Sudah', 'Belum'])->default('Belum')->after('problem_description');
+            });
+        }
     }
 
     /**
@@ -22,8 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('handovers', function (Blueprint $table) {
-            $table->dropColumn('lototo_status');
-        });
+        if (Schema::hasTable('handovers') && Schema::hasColumn('handovers', 'lototo_status')) {
+            Schema::table('handovers', function (Blueprint $table) {
+                $table->dropColumn('lototo_status');
+            });
+        }
     }
 };
