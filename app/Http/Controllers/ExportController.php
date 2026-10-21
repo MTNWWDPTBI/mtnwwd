@@ -151,6 +151,7 @@ class ExportController extends Controller
                         <th>Tim</th>
                         <th>Nama Mesin</th>
                         <th>Detail Problem</th>
+                        <th>LOTOTO</th> <!-- TAMBAHAN HEADER LOTOTO -->
                         <th>Status</th>
                         <th>Dilaporkan Oleh</th>
                         <th>Diselesaikan Oleh</th>
@@ -161,12 +162,17 @@ class ExportController extends Controller
 
         foreach ($handovers as $log) {
             $statusColor = $log->status == 'OPEN' ? 'color: red; font-weight: bold;' : 'color: green; font-weight: bold;';
+            
+            // Tambahkan Pewarnaan untuk LOTOTO
+            $lototoColor = $log->lototo_status == 'Sudah' ? 'color: green; font-weight: bold;' : 'color: red; font-weight: bold;';
+
             $html .= '<tr>
                 <td style="text-align: center;">'.$log->handover_date.'</td>
                 <td style="text-align: center;">Shift '.$log->shift.'</td>
                 <td style="text-align: center; font-weight: bold;">Tim '.$log->team.'</td>
                 <td>'.htmlspecialchars($log->machine_name).'</td>
                 <td>'.htmlspecialchars($log->problem_description).'</td>
+                <td style="text-align: center; '.$lototoColor.'">'.($log->lototo_status ?? 'Belum').'</td> <!-- TAMBAHAN DATA LOTOTO -->
                 <td style="text-align: center; '.$statusColor.'">'.$log->status.'</td>
                 <td>'.htmlspecialchars($log->reported_by).'</td>
                 <td>'.htmlspecialchars($log->resolved_by ?? '-').'</td>
