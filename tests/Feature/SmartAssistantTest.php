@@ -201,4 +201,84 @@ class SmartAssistantTest extends TestCase
             'user_message' => 'Pesan yang akan dihapus',
         ]);
     }
+
+    public function test_it_completes_two_step_calling_architecture_with_natural_ai_synthesis(): void
+    {
+        $user = User::factory()->create();
+
+        SapHistory::create([
+            'date' => '2026-01-15',
+            'month' => '01.2026',
+            'week' => 'W3',
+            'functional_location' => 'KA-WWD-NDB-3006',
+            'maint_order_desc' => 'Bearing spindle aus',
+            'problem' => 'Vibrasi tinggi pada poros utama',
+            'object_part' => 'BEARING',
+            'executor' => 'Slamet',
+            'status' => 'COMP',
+            'bm_hrs' => 3.5,
+        ]);
+
+        // Simulasikan Two-Step Calling menggunakan Http::fakeSequence
+        Http::fake([
+            'https://api.relink-gateway.biz.id/v1/messages' => Http::sequence()
+                // Step 1: AI memutuskan memanggil tool query_sap_database
+                ->push([
+                    'id' => 'msg_step1',
+                    'type' => 'message',
+                    'role' => 'assistant',
+                    'stop_reason' => 'tool_use',
+                    'content' => [
+                        [
+                            'type' => 'tool_use',
+                            'id' => 'call_tool_ndb3006',
+                            'name' => 'query_sap_database',
+                            'input' => [
+                                'sql' => "SELECT date, functional_location, maint_order_desc, object_part, bm_hrs FROM sap_histories WHERE functional_location LIKE '%3006%'",
+                            ],
+                        ],
+                    ],
+                ], 200)
+                // Step 2: AI menerima tool_result dari database dan merangkum secara natural & komunikatif
+                ->push([
+                    'id' => 'msg_step2',
+                    'type' => 'message',
+                    'role' => 'assistant',
+                    'stop_reason' => 'end_turn',
+                    'content' => [
+                        [
+                            'type' => 'text',
+                            'text' => 'The user asked in Indonesian. Tool result contains 3.5 hrs breakdown on bearing.',
+                        ],
+                        [
+                            'type' => 'text',
+                            'text' => "Halo Mas! Dari hasil pengecekan log SAP untuk mesin **KA-WWD-NDB-3006**, tercatat ada 1 kali breakdown pada tanggal **15 Januari 2026** dengan durasi **3,5 jam** karena bearing spindle aus.\n\nSaran teknis: Sebaiknya lakukan greasing berkala dan monitoring vibrasi setiap shift agar tidak berulang.",
+                        ],
+                    ],
+                ], 200),
+        ]);
+
+        $response = $this->actingAs($user)->postJson(route('assistant.chat'), [
+            'message' => 'Tolong cek riwayat kerusakan mesin NDB-3006 di bulan Januari 2026',
+        ]);
+
+        $response->assertOk();
+        $reply = $response->json('reply');
+
+        // Pastikan internal monologue tersaring dan jawaban natural AI tampil
+        $this->assertStringNotContainsString('The user asked in Indonesian', $reply);
+        $this->assertStringContainsString('KA-WWD-NDB-3006', $reply);
+        $this->assertStringContainsString('3,5 jam', $reply);
+        $this->assertStringContainsString('Saran teknis', $reply);
+
+        // Verifikasi tepat 2 kali panggilan API (Two-Step Calling) dilakukan
+        Http::assertSentCount(2);
+
+        // Verifikasi tersimpan ke chat history
+        $this->assertDatabaseHas('chat_histories', [
+            'user_id' => $user->id,
+            'user_message' => 'Tolong cek riwayat kerusakan mesin NDB-3006 di bulan Januari 2026',
+            'ai_response' => $reply,
+        ]);
+    }
 }

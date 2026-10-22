@@ -7,6 +7,7 @@ use App\Models\MachineUnit;
 use App\Models\WwdProject;
 use App\Models\WwdProjectDetail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class WwdProjectController extends Controller
 {
@@ -90,12 +91,47 @@ class WwdProjectController extends Controller
     {
         $detail = WwdProjectDetail::findOrFail($id);
 
+        // Dukung input langsung maupun input yang dikirim dari baris form tabel (details[$id])
+        $dynamicData = $request->input("details.{$id}.dynamic_data", $request->input('dynamic_data', []));
+        $status = $request->input("details.{$id}.status", $request->input('status', 'OPEN'));
+
         // Simpan jawaban teknisi ke dalam JSON
         $detail->update([
-            'dynamic_data' => $request->dynamic_data,
-            'status' => $request->status ?? 'OPEN',
+            'dynamic_data' => $dynamicData,
+            'status' => $status,
         ]);
 
         return back()->with('success', 'Data mesin '.$detail->machineUnit->machine_number.' berhasil diupdate!');
+    }
+
+    // 6. Update Semua Data Checklist Mesin Sekaligus (Bulk Update)
+    public function bulkUpdate(Request $request, $id)
+    {
+        $project = WwdProject::findOrFail($id);
+
+        $validated = $request->validate([
+            'details' => 'required|array',
+            'details.*.dynamic_data' => 'nullable|array',
+            'details.*.status' => 'nullable|string|in:OPEN,CLOSE',
+        ]);
+
+        $updatedCount = 0;
+        DB::transaction(function () use ($project, $validated, &$updatedCount) {
+            foreach ($validated['details'] as $detailId => $data) {
+                $detail = WwdProjectDetail::where('wwd_project_id', $project->id)
+                    ->where('id', $detailId)
+                    ->first();
+
+                if ($detail) {
+                    $detail->update([
+                        'dynamic_data' => $data['dynamic_data'] ?? [],
+                        'status' => $data['status'] ?? 'OPEN',
+                    ]);
+                    $updatedCount++;
+                }
+            }
+        });
+
+        return back()->with('success', "Berhasil menyimpan dan memperbarui seluruh data ({$updatedCount} unit mesin)!");
     }
 }

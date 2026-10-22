@@ -106,32 +106,25 @@ class SmartAssistantController extends Controller
         $systemInstruction = $this->buildSystemPrompt();
         $tools = $this->getToolsDefinition();
 
-        // 1. Panggil AI Gateway
+        // 1. Panggil AI Gateway (Step 1: Analisis Intensi & Tool Calling)
         $aiResult = $this->callAnthropicApi($systemInstruction, $messages, $tools);
 
         $contentBlocks = $aiResult['content'] ?? [];
-        $initialText = '';
         $toolUseBlock = null;
 
         foreach ($contentBlocks as $block) {
-            if (($block['type'] ?? '') === 'text') {
-                $initialText .= ($block['text'] ?? '')."\n";
-            } elseif (($block['type'] ?? '') === 'tool_use' && ! empty($block['name']) && $toolUseBlock === null) {
+            if (($block['type'] ?? '') === 'tool_use' && ! empty($block['name']) && $toolUseBlock === null) {
                 $toolUseBlock = $block;
             }
         }
 
+        $initialText = $this->extractCleanAiResponse($contentBlocks);
         $finalReply = '';
         $extractedSql = null;
         $chartData = null;
 
-        // 2. Deteksi kueri SQL dari tag [SQL] di respons teks
-        if (preg_match('/\[SQL\](.*?)\[\/SQL\]/is', $initialText, $matches)) {
-            $extractedSql = trim($matches[1]);
-        }
-
-        // 3. Deteksi kueri SQL dari blok tool_use
-        if (! $extractedSql && $toolUseBlock) {
+        // 2. Deteksi kueri SQL dari blok tool_use
+        if ($toolUseBlock) {
             $toolName = $toolUseBlock['name'] ?? '';
             $toolInput = $toolUseBlock['input'] ?? [];
 
@@ -142,19 +135,87 @@ class SmartAssistantController extends Controller
             }
         }
 
-        // 4. Fallback cerdas: Jika user jelas meminta data tetapi AI gagal menghasilkan SQL
+        // 3. Deteksi kueri SQL dari tag [SQL] di respons teks jika tool_use tidak dipakai
+        if (! $extractedSql && preg_match('/\[SQL\](.*?)\[\/SQL\]/is', $initialText, $matches)) {
+            $extractedSql = trim($matches[1]);
+        }
+
+        // 4. Fallback cerdas: Jika user jelas meminta data mesin tapi AI tidak menghasilkan SQL
         if (! $extractedSql) {
             $extractedSql = $this->inferQueryFromIntent($userMessage, $pastChats);
         }
 
-        // 5. Eksekusi Kueri jika ada
+        // 5. Eksekusi Kueri jika ada (Arsitektur Two-Step Calling)
         if ($extractedSql) {
             $queryResult = $this->executeSafeQuery($extractedSql);
 
             if (isset($queryResult['error'])) {
                 $finalReply = '⚠️ Kendala Kueri: '.$queryResult['error']."\n\nKueri: `{$extractedSql}`";
             } else {
-                $finalReply = $this->formatDatabaseReport($extractedSql, $queryResult, $userMessage);
+                // ========================================================
+                // ARSITEKTUR TWO-STEP CALLING:
+                // Mengirimkan hasil riil database kembali ke AI Gateway via tool_result
+                // agar AI dapat menalar, merangkum angka, dan berkomunikasi
+                // secara natural, hangat, dan solutif seperti manusia.
+                // ========================================================
+                $step2Messages = $messages;
+
+                if ($toolUseBlock) {
+                    $step2Messages[] = [
+                        'role' => 'assistant',
+                        'content' => $contentBlocks,
+                    ];
+                    $step2Messages[] = [
+                        'role' => 'user',
+                        'content' => [
+                            [
+                                'type' => 'tool_result',
+                                'tool_use_id' => $toolUseBlock['id'] ?? 'call_query_sap',
+                                'content' => json_encode([
+                                    'query_executed' => $extractedSql,
+                                    'row_count' => count($queryResult),
+                                    'data' => $queryResult,
+                                ]),
+                            ],
+                        ],
+                    ];
+                } else {
+                    $step2Messages[] = [
+                        'role' => 'assistant',
+                        'content' => "Saya mencari data tersebut dari database SAP dengan kueri: `{$extractedSql}`",
+                    ];
+                    $step2Messages[] = [
+                        'role' => 'user',
+                        'content' => 'Berikut data riwayat SAP yang ditemukan ('.count($queryResult)." baris):\n".json_encode($queryResult)."\n\nAnalisis data ini dan sampaikan hasilnya secara ramah, komunikatif, dan alami dalam Bahasa Indonesia layaknya engineer berpengalaman.",
+                    ];
+                }
+
+                $step2Instruction = $systemInstruction."\n\n".
+                'PANDUAN STEP 2 (SINTESIS DATA & KOMUNIKASI MANUSIAWI):
+Data maintenance dari database SAP sudah didapatkan di atas. Sekarang tugasmu adalah memberikan jawaban akhir kepada user secara natural, manusiawi, ramah, dan solutif seperti engineer maintenance berpengalaman:
+1. Sampaikan poin inti / angka utama secara lugas dengan gaya bahasa santai namun profesional (jangan kaku seperti template).
+2. Tampilkan rincian data (gunakan tabel Markdown atau daftar poin ringkas bila ada lebih dari 1 baris).
+3. Berikan insight engineering praktis (analisis potensi akar penyebab dan rekomendasi pencegahan atau pemeriksaan).
+4. Jika user meminta grafik visual atau data berupa perbandingan/ranking, sertakan blok [CHART]{"chart_type":"bar"|"line"|"pie","title":"...","labels":[...],"dataset_label":"...","data":[...]} [/CHART] di baris paling akhir.
+5. JANGAN memanggil tool lagi. Langsung sampaikan jawaban lengkapmu dalam Bahasa Indonesia.';
+
+                $step2Result = $this->callAnthropicApi($step2Instruction, $step2Messages, []);
+
+                if (! empty($step2Result['content'])) {
+                    $extractedText = $this->extractCleanAiResponse($step2Result['content']);
+                    // Pastikan respons Step 2 bukan hanya pantulan tag [SQL] mentah
+                    if (! preg_match('/^\s*\[SQL\].*?\[\/SQL\]\s*$/is', $extractedText)) {
+                        $finalReply = $extractedText;
+                    }
+                }
+
+                // Fallback jika panggilan Step 2 timeout atau menghasilkan teks kosong
+                if (empty(trim($finalReply))) {
+                    $finalReply = $this->formatDatabaseReport($extractedSql, $queryResult, $userMessage);
+                } else {
+                    // Enrich chart otomatis jika user minta grafik/ranking tapi AI belum menyertakannya
+                    $finalReply = $this->enrichChartIfAppropriate($finalReply, $userMessage, $queryResult);
+                }
             }
         } elseif (! empty($chartData)) {
             $cleanText = trim($initialText) ?: 'Berikut grafik visualisasi data yang diminta:';
@@ -166,9 +227,6 @@ class SmartAssistantController extends Controller
         if (empty(trim($finalReply))) {
             $finalReply = 'Halo! Saya **MTN-AI Bekaert Indonesia**. Ada data mesin, breakdown, atau log maintenance SAP yang bisa saya bantu analisa hari ini?';
         }
-
-        // Bersihkan jika ada teks monologue internal reasoning berbahasa Inggris di baris awal
-        $finalReply = preg_replace('/^(The user wants|The user is asking|I got the data|Let me present|Let me create)[^\n]*\n*/i', '', $finalReply);
 
         // 6. Simpan ke Database ChatHistory khusus untuk akun yang sedang login
         ChatHistory::create([
@@ -426,6 +484,9 @@ class SmartAssistantController extends Controller
             return ['error' => 'Query SQL kosong.'];
         }
 
+        // Auto-correct pencarian nomor mesin dari functional_location = 'xxx' menjadi LIKE '%xxx%'
+        $sql = preg_replace("/functional_location\s*=\s*['\"]([^'\"]+)['\"]/i", "functional_location LIKE '%$1%'", $sql);
+
         // Auto-correct alias kolom umum yang sering digenerate oleh AI
         $sql = str_ireplace(['equipment_id', 'equipment', 'machine_id', 'mesin_id'], 'functional_location', $sql);
         $sql = str_ireplace(['created_at'], 'date', $sql);
@@ -515,27 +576,137 @@ class SmartAssistantController extends Controller
      */
     private function buildSystemPrompt(): string
     {
-        return "Kamu adalah 'MTN-AI Bekaert Indonesia', Asisten Cerdas Maintenance Pabrik Bekaert Indonesia.
-Kamu bertugas membantu teknisi dan engineer menganalisis log kerusakan, downtime, performa mesin, dan riwayat pekerjaan SAP.
+        return "Kamu adalah 'MTN-AI Bekaert Indonesia', Asisten AI Cerdas Maintenance Pabrik Bekaert Indonesia.
+Kamu berkomunikasi dengan teknisi, supervisor, dan engineer dengan gaya natural, hangat, solutif, dan profesional layaknya rekan kerja manusia yang ahli di bidang maintenance.
+Gunakan Bahasa Indonesia yang luwes, komunikatif, dan mudah dipahami. Hindari bahasa kaku atau mekanis seperti template robotik.
 
 TABEL DATABASE: `sap_histories`
 KOLOM LENGKAP:
 - Waktu: `date` (YYYY-MM-DD), `month` (MM.YYYY, misal '01.2026'), `week`
-- Mesin: `functional_location` (kode mesin, misal 'KA-WWD-NDB-3006'), `indicator`
-- Order SAP: `maint_order` (nomor order), `maint_order_desc` (deskripsi masalah)
+- Mesin: `functional_location` (kode mesin lengkap: 'KA-WWD-NDB-XXXX', misal 'KA-WWD-NDB-3006'), `indicator`
+- Order SAP: `maint_order` (nomor order), `maint_order_desc` (deskripsi masalah/pekerjaan)
 - Part & Kerusakan: `object_part` (komponen part, misal 'MOTOR', 'BEARING', 'PULLEY'), `problem`, `code_cause`, `code_group`, `error_code`
 - Personel: `creator` (pelapor), `executor` (teknisi perbaikan), `activity`, `confirmation_text` (catatan teknisi), `status`
 - Pabrik: `plant` ('KA'), `area` ('WWD'), `dept` ('NDB'), `type`, `cat`
 - Metrik Numerik: `bm_hrs` (jam breakdown/downtime mesin mati), `actual_hrs` (durasi kerja teknisi), `response_hrs` (waktu respon), `notfis` (frekuensi/jumlah kejadian)
 
-PANDUAN KEMAMPUAN TOOLS & QUERY:
-1. Jika pertanyaan membutuhkan data historis, kamu bisa memanggil tool `query_sap_database` ATAU menyertakan query SQL SELECT di dalam tag [SQL] dan [/SQL].
-   PENTING: Gunakan kolom `functional_location` untuk mencari mesin, kolom `date` untuk tanggal, dan kolom `executor` untuk teknisi.
-   Contoh pencarian mesin 4016: [SQL]SELECT date, functional_location, maint_order, maint_order_desc, object_part, problem, creator, executor, bm_hrs, actual_hrs, status FROM sap_histories WHERE functional_location LIKE '%4016%' ORDER BY date DESC LIMIT 50[/SQL]
-   Contoh teknisi: [SQL]SELECT executor, COUNT(*) as frekuensi, SUM(actual_hrs) as total_jam FROM sap_histories WHERE functional_location LIKE '%4016%' GROUP BY executor ORDER BY frekuensi DESC LIMIT 20[/SQL]
-   Contoh agregasi: [SQL]SELECT functional_location, SUM(bm_hrs) as total_bm, COUNT(*) as frekuensi FROM sap_histories GROUP BY functional_location ORDER BY total_bm DESC LIMIT 5[/SQL]
-2. Jika user meminta grafik visual, kamu BISA memanggil tool `render_chart`.
-3. Gunakan Bahasa Indonesia yang ramah, profesional, dan ringkas layaknya engineer maintenance pabrik.";
+PANDUAN TOOL CALLING & PENCARIAN DATA:
+1. Jika pertanyaan membutuhkan data historis maintenance, panggil tool `query_sap_database` ATAU sertakan perintah SQL SELECT di dalam tag [SQL] dan [/SQL].
+   PENTING:
+   - Format kode mesin di database adalah 'KA-WWD-NDB-XXXX', jadi SELALU gunakan LIKE '%XXXX%' untuk kolom `functional_location` (misal: LIKE '%3006%').
+   - Gunakan kolom `date` untuk tanggal (YYYY-MM-DD) dan `month` untuk bulan (MM.YYYY, misal '01.2026').
+   - Gunakan kolom `executor` untuk nama teknisi perbaikan.
+   - Jangan gunakan kueri berbahaya (DROP, DELETE, UPDATE, INSERT).
+2. Jika pertanyaan TIDAK membutuhkan query database (misal: salam, tanya teori TPM, SOP umum, rumus OEE, saran perbaikan umum), langsung jawab secara natural dan ramah tanpa perlu memanggil tool.";
+    }
+
+    /**
+     * Ekstrak teks bersih user-facing dari content blocks AI,
+     * menghilangkan blok internal monologue/reasoning berbahasa Inggris dari model (seperti DeepSeek).
+     */
+    private function extractCleanAiResponse(array $contentBlocks): string
+    {
+        $textBlocks = [];
+        foreach ($contentBlocks as $block) {
+            if (($block['type'] ?? '') === 'text' && ! empty(trim($block['text'] ?? ''))) {
+                $textBlocks[] = trim($block['text']);
+            }
+        }
+
+        if (empty($textBlocks)) {
+            return '';
+        }
+
+        // Jika hanya ada 1 blok teks
+        if (count($textBlocks) === 1) {
+            $text = $textBlocks[0];
+            $text = preg_replace('/<think>.*?<\/think>/is', '', $text);
+            $text = preg_replace('/<｜DSML｜.*?<\/｜DSML｜.*?>/is', '', $text);
+
+            return trim($text);
+        }
+
+        // Jika ada beberapa blok teks (misal block 0 adalah internal thinking DeepSeek):
+        // Ambil blok user-facing dari urutan terakhir yang bukan internal reasoning
+        for ($i = count($textBlocks) - 1; $i >= 0; $i--) {
+            $candidate = $textBlocks[$i];
+            if (str_contains($candidate, '<｜DSML｜')) {
+                continue;
+            }
+            if (preg_match('/^(The user|Need to|Let me check|Empty result|Data has duplicates|I should|Provide summary|Let me analyze)[^A-Za-z0-9]/i', $candidate)) {
+                continue;
+            }
+
+            $candidate = preg_replace('/<think>.*?<\/think>/is', '', $candidate);
+            $candidate = preg_replace('/<｜DSML｜.*?<\/｜DSML｜.*?>/is', '', $candidate);
+            $trimmed = trim($candidate);
+            if (! empty($trimmed)) {
+                return $trimmed;
+            }
+        }
+
+        // Fallback ke blok terakhir jika semua terfilter
+        $last = end($textBlocks);
+        $last = preg_replace('/<think>.*?<\/think>/is', '', $last);
+
+        return trim($last);
+    }
+
+    /**
+     * Tambahkan tag [CHART] otomatis jika user meminta visualisasi / perbandingan ranking
+     * dan hasil query mengandung data agregasi numerik, tetapi AI belum menyertakannya di teks respons.
+     */
+    private function enrichChartIfAppropriate(string $reply, string $userMessage, array $results): string
+    {
+        if (str_contains($reply, '[CHART]') || empty($results) || count($results) < 2) {
+            return $reply;
+        }
+
+        $wantsChart = (bool) preg_match('/(grafik|chart|visual|top\s*\d*|ranking|terbanyak|tertinggi|paling sering|perbandingan)/i', $userMessage);
+
+        $firstRow = (array) $results[0];
+        $keys = array_keys($firstRow);
+
+        $hasAggregation = false;
+        $valKey = null;
+        $labelKey = $keys[0];
+
+        foreach ($keys as $k) {
+            if (preg_match('/(total|sum|count|avg|frekuensi|bm_hrs|actual_hrs)/i', $k) && is_numeric($firstRow[$k] ?? null)) {
+                $hasAggregation = true;
+                $valKey = $k;
+                break;
+            }
+        }
+
+        if (! $wantsChart && ! $hasAggregation) {
+            return $reply;
+        }
+
+        if ($valKey) {
+            $labels = [];
+            $values = [];
+            foreach (array_slice($results, 0, 8) as $idx => $row) {
+                $r = (array) $row;
+                $labels[] = (string) ($r[$labelKey] ?? 'Item '.($idx + 1));
+                $values[] = (float) ($r[$valKey] ?? 0);
+            }
+
+            if (! empty($labels)) {
+                $chartTitle = 'Grafik Perbandingan '.ucwords(str_replace('_', ' ', $valKey));
+                $chartJson = json_encode([
+                    'chart_type' => 'bar',
+                    'title' => $chartTitle,
+                    'labels' => $labels,
+                    'dataset_label' => ucwords(str_replace('_', ' ', $valKey)),
+                    'data' => $values,
+                ]);
+
+                return $reply."\n\n[CHART]{$chartJson}[/CHART]";
+            }
+        }
+
+        return $reply;
     }
 
     /**

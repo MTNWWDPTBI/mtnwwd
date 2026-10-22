@@ -54,6 +54,10 @@ Route::middleware('auth')->group(function () {
     // Rute untuk WWD Projects
     Route::resource('wwd-projects', WwdProjectController::class);
 
+    // Rute update sekaligus (bulk update) semua checklist mesin dalam project
+    Route::put('wwd-projects/{id}/bulk-update', [WwdProjectController::class, 'bulkUpdate'])
+        ->name('wwd-projects.bulk-update');
+
     // Rute khusus untuk teknisi update detail checklist JSON
     Route::put('wwd-projects/details/{id}', [WwdProjectController::class, 'updateDetail'])
         ->name('wwd-projects.details.update');
