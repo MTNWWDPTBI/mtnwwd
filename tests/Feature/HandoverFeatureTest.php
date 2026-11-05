@@ -119,4 +119,57 @@ class HandoverFeatureTest extends TestCase
         $response->assertSee('BLOWER 1');
         $response->assertSee('Sudah');
     }
+
+    public function test_admin_can_delete_handover_problem_log(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        $handover = Handover::create([
+            'handover_date' => '2026-10-21',
+            'shift' => '1',
+            'team' => 'A',
+            'machine_name' => 'SALAH INPUT MESIN',
+            'problem_description' => 'Salah ketik problem oleh teknisi',
+            'lototo_status' => 'Belum',
+            'status' => 'OPEN',
+            'reported_by' => 'Teknisi 1',
+        ]);
+
+        $response = $this->actingAs($admin)->delete(route('handover.destroy', $handover->id));
+
+        $response->assertRedirect(route('handover.index'));
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('handovers', [
+            'id' => $handover->id,
+        ]);
+    }
+
+    public function test_non_admin_cannot_delete_handover_problem_log(): void
+    {
+        $teknisi = User::factory()->create([
+            'role' => 'teknisi',
+        ]);
+
+        $handover = Handover::create([
+            'handover_date' => '2026-10-21',
+            'shift' => '1',
+            'team' => 'A',
+            'machine_name' => 'MESIN PENTING',
+            'problem_description' => 'Problem tidak boleh dihapus teknisi',
+            'lototo_status' => 'Belum',
+            'status' => 'OPEN',
+            'reported_by' => 'Teknisi 1',
+        ]);
+
+        $response = $this->actingAs($teknisi)->delete(route('handover.destroy', $handover->id));
+
+        $response->assertForbidden();
+
+        $this->assertDatabaseHas('handovers', [
+            'id' => $handover->id,
+        ]);
+    }
 }

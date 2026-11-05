@@ -6,6 +6,7 @@ use App\Models\Machine;
 use App\Models\MachineUnit;
 use App\Models\WwdProject;
 use App\Models\WwdProjectDetail;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -133,5 +134,26 @@ class WwdProjectController extends Controller
         });
 
         return back()->with('success', "Berhasil menyimpan dan memperbarui seluruh data ({$updatedCount} unit mesin)!");
+    }
+
+    /**
+     * Hapus Project Beserta Seluruh Detail Checklistnya (Khusus Admin).
+     */
+    public function destroy(int|string $id): RedirectResponse
+    {
+        if (auth()->user()?->role !== 'admin') {
+            abort(403, 'Akses ditolak! Hanya Admin yang berhak menghapus project.');
+        }
+
+        $project = WwdProject::findOrFail($id);
+        $projectName = $project->project_name;
+
+        DB::transaction(function () use ($project) {
+            $project->details()->delete();
+            $project->delete();
+        });
+
+        return redirect()->route('wwd-projects.index')
+            ->with('success', "Project '{$projectName}' beserta seluruh checklist mesin berhasil dihapus!");
     }
 }

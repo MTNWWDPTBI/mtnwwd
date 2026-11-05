@@ -10,13 +10,20 @@ use App\Models\Sparepart;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB; // <-- 1. Tambahkan ini
+use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\IOFactory;         // <-- 2. Tambahkan ini
 
 class ImportController extends Controller
 {
-    public function index()
+    public function index(): View
     {
-        return view('import-data');
+        $sapStats = [
+            'latest_date' => DB::table('sap_histories')->max('date'),
+            'last_uploaded_at' => DB::table('sap_histories')->max('created_at'),
+            'total_rows' => DB::table('sap_histories')->count(),
+        ];
+
+        return view('import-data', compact('sapStats'));
     }
 
     public function store(Request $request)

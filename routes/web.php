@@ -7,6 +7,7 @@ use App\Http\Controllers\HandoverController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ImportController;
 use App\Http\Controllers\MachineController;
+use App\Http\Controllers\PicReportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SmartAssistantController;
 use App\Http\Controllers\SparepartController;
@@ -52,7 +53,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/handover/resolve/{id}', [HandoverController::class, 'resolve'])->name('handover.resolve');
 
     // Rute untuk WWD Projects
-    Route::resource('wwd-projects', WwdProjectController::class);
+    Route::resource('wwd-projects', WwdProjectController::class)->except(['destroy']);
 
     // Rute update sekaligus (bulk update) semua checklist mesin dalam project
     Route::put('wwd-projects/{id}/bulk-update', [WwdProjectController::class, 'bulkUpdate'])
@@ -67,6 +68,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/smart-assistant/chat', [SmartAssistantController::class, 'chat'])->name('assistant.chat');
     Route::post('/smart-assistant/clear', [SmartAssistantController::class, 'clearHistory'])->name('assistant.clear');
     Route::get('/smart-assistant/history', [SmartAssistantController::class, 'getHistory'])->name('assistant.history');
+
+    // Dashboard Laporan Bulanan PIC Mesin
+    Route::get('/pic-report', [PicReportController::class, 'index'])->name('pic.index');
+    Route::post('/pic-report/generate', [PicReportController::class, 'generateReport'])->name('pic.generate');
+    Route::post('/pic-report/ai-summary', [PicReportController::class, 'generateAiSummary'])->name('pic.ai-summary');
+    Route::post('/pic-report/import', [PicReportController::class, 'importPic'])->name('pic.import');
 
     // ========================================================
     // ZONA KHUSUS ADMIN (DIGEMBOK MIDDLEWARE)
@@ -103,6 +110,12 @@ Route::middleware('auth')->group(function () {
 
         // Rute Export Khusus Project WWD (Hanya Admin)
         Route::get('/export/wwd-project/{id}', [ExportController::class, 'exportWwdProject'])->name('export.wwd_project');
+
+        // Hapus Project WWD (Hanya Admin)
+        Route::delete('wwd-projects/{id}', [WwdProjectController::class, 'destroy'])->name('wwd-projects.destroy');
+
+        // Hapus Riwayat Shift Handover (Hanya Admin)
+        Route::delete('/handover/{id}', [HandoverController::class, 'destroy'])->name('handover.destroy');
 
         // Jalankan Migrasi Database via Web Browser (Khusus Admin, tanpa perlu SSH / terminal Hostinger)
         Route::get('/admin/run-migrate', function () {

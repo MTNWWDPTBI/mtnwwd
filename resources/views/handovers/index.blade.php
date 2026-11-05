@@ -105,16 +105,28 @@
                                 <div class="text-[9px] sm:text-[10px] text-slate-400 mt-1">Pelapor: <strong class="text-white">{{ $log->reported_by }}</strong></div>
                             </td>
                             <td class="px-3 py-3 sm:px-6 sm:py-4 text-center whitespace-nowrap">
-                                @if($log->status == 'OPEN')
-                                    <form action="{{ route('handover.resolve', $log->id) }}" method="POST" onsubmit="return confirm('Sudah diselesaikan?');">
-                                        @csrf
-                                        <button type="submit" class="inline-flex items-center px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-[#37415C]/50 hover:bg-[#37415C] border border-[#37415C] text-emerald-400 text-[10px] sm:text-xs font-bold transition">
-                                            ✅ Selesai
-                                        </button>
-                                    </form>
-                                @else
-                                    <span class="text-slate-500 text-[10px] sm:text-xs font-bold italic">Clear 👍</span>
-                                @endif
+                                <div class="flex items-center justify-center gap-1.5 sm:gap-2">
+                                    @if($log->status == 'OPEN')
+                                        <form action="{{ route('handover.resolve', $log->id) }}" method="POST" onsubmit="return confirm('Sudah diselesaikan?');">
+                                            @csrf
+                                            <button type="submit" class="inline-flex items-center px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-[#37415C]/50 hover:bg-[#37415C] border border-[#37415C] text-emerald-400 text-[10px] sm:text-xs font-bold transition">
+                                                ✅ Selesai
+                                            </button>
+                                        </form>
+                                    @else
+                                        <span class="text-slate-500 text-[10px] sm:text-xs font-bold italic">Clear 👍</span>
+                                    @endif
+
+                                    @if(auth()->user()->role === 'admin')
+                                        <form action="{{ route('handover.destroy', $log->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus laporan problem mesin {{ addslashes($log->machine_name) }} ini?');" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="inline-flex items-center p-1.5 sm:p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-[10px] sm:text-xs font-bold transition" title="Hapus Laporan Problem (Khusus Admin)">
+                                                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                         @empty

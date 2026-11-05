@@ -175,4 +175,71 @@ class WwdProjectFeatureTest extends TestCase
         $this->assertEquals('45 Celcius', $detail->dynamic_data['Cek Suhu Motor']);
         $this->assertEquals('CLOSE', $detail->status);
     }
+
+    public function test_admin_can_delete_wwd_project_and_its_details(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        $machine = Machine::create([
+            'machine_code' => 'MC001',
+            'machine_name' => 'WWD NDB Drawbench',
+        ]);
+        $unit = MachineUnit::create([
+            'machine_id' => $machine->id,
+            'machine_number' => 'KA-WWD-NDB-3009',
+            'status' => 'ACTIVE',
+        ]);
+
+        $project = WwdProject::create([
+            'project_name' => 'Project Akan Dihapus',
+            'pic_leader' => 'Admin',
+            'target_date' => '2026-06-01',
+            'column_headers' => ['Poin 1'],
+            'status' => 'OPEN',
+        ]);
+
+        $detail = WwdProjectDetail::create([
+            'wwd_project_id' => $project->id,
+            'machine_unit_id' => $unit->id,
+            'dynamic_data' => ['Poin 1' => 'OK'],
+            'status' => 'OPEN',
+        ]);
+
+        $response = $this->actingAs($admin)->delete(route('wwd-projects.destroy', $project->id));
+
+        $response->assertRedirect(route('wwd-projects.index'));
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('wwd_projects', [
+            'id' => $project->id,
+        ]);
+        $this->assertDatabaseMissing('wwd_project_details', [
+            'id' => $detail->id,
+        ]);
+    }
+
+    public function test_non_admin_cannot_delete_wwd_project(): void
+    {
+        $teknisi = User::factory()->create([
+            'role' => 'teknisi',
+        ]);
+
+        $project = WwdProject::create([
+            'project_name' => 'Project Terlarang Dihapus',
+            'pic_leader' => 'Leader',
+            'target_date' => '2026-06-01',
+            'column_headers' => ['Poin 1'],
+            'status' => 'OPEN',
+        ]);
+
+        $response = $this->actingAs($teknisi)->delete(route('wwd-projects.destroy', $project->id));
+
+        $response->assertForbidden();
+
+        $this->assertDatabaseHas('wwd_projects', [
+            'id' => $project->id,
+        ]);
+    }
 }

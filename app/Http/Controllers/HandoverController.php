@@ -81,4 +81,21 @@ class HandoverController extends Controller
 
         return redirect()->back()->with('success', 'Problem mesin berhasil dikonfirmasi SELESAI!');
     }
+
+    /**
+     * Hapus Laporan Problem Handover (Khusus Admin).
+     */
+    public function destroy(int|string $id): RedirectResponse
+    {
+        if (auth()->user()?->role !== 'admin') {
+            abort(403, 'Akses ditolak! Hanya Admin yang berhak menghapus laporan handover.');
+        }
+
+        $handover = Handover::findOrFail($id);
+        $machineName = $handover->machine_name;
+        $handover->delete();
+
+        return redirect()->route('handover.index')
+            ->with('success', "Laporan problem mesin '{$machineName}' berhasil dihapus!");
+    }
 }

@@ -38,4 +38,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(ChatHistory::class);
     }
+
+    /**
+     * Pemetaan mesin PIC yang menjadi tanggung jawab teknisi ini.
+     */
+    public function picMachines(): HasMany
+    {
+        return $this->hasMany(PicMachine::class);
+    }
 }
