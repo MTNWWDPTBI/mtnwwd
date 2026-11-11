@@ -46,4 +46,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(PicMachine::class);
     }
+
+    /**
+     * Riwayat serah terima shift (handover log) yang dicatat oleh user ini.
+     */
+    public function shiftHandovers(): HasMany
+    {
+        return $this->hasMany(ShiftHandover::class);
+    }
 }

@@ -24,7 +24,6 @@ class ApplicationSmokeTest extends TestCase
             'tpm.index',
             'tpm.scan',
             'handover.index',
-            'handover.create',
             'assistant.index',
         ];
 

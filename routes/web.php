@@ -48,8 +48,7 @@ Route::middleware('auth')->group(function () {
 
     // Shift Handover (Input dan Konfirmasi Problem Mesin)
     Route::get('/handover', [HandoverController::class, 'index'])->name('handover.index');
-    Route::get('/handover/create', [HandoverController::class, 'create'])->name('handover.create');
-    Route::post('/handover/store', [HandoverController::class, 'store'])->name('handover.store');
+    Route::post('/handover', [HandoverController::class, 'store'])->name('handover.store');
     Route::post('/handover/resolve/{id}', [HandoverController::class, 'resolve'])->name('handover.resolve');
 
     // Rute untuk WWD Projects

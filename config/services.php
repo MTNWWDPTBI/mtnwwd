@@ -42,4 +42,10 @@ return [
         'timeout' => (int) env('AI_TIMEOUT', 45),
     ],
 
+    'wa_bot' => [
+        'url' => env('WA_BOT_URL'),
+        'secret' => env('WA_BOT_SECRET'),
+        'group_id' => env('WA_GROUP_ID'),
+    ],
+
 ];

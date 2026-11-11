@@ -2,68 +2,58 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendWhatsappHandoverJob;
 use App\Models\Handover;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class HandoverController extends Controller
 {
     /**
-     * Tampilkan riwayat Handover (OPEN di atas).
+     * Tampilkan halaman input problem shift dan 10 riwayat logbook terakhir.
      */
     public function index(): View
     {
         $handovers = Handover::orderByRaw("CASE WHEN status = 'OPEN' THEN 1 ELSE 2 END")
             ->orderBy('handover_date', 'desc')
             ->orderBy('shift', 'desc')
+            ->take(10)
             ->get();
 
-        return view('handovers.index', compact('handovers'));
+        return view('handover.index', compact('handovers'));
     }
 
     /**
-     * Halaman Input Handover Baru.
-     */
-    public function create(): View
-    {
-        return view('handovers.create');
-    }
-
-    /**
-     * Simpan Data Handover Baru (Ketik Manual).
+     * Simpan Data Problem Shift (Logbook).
      */
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'handover_date' => 'required|date',
-            'shift' => 'required|in:1,2,3',
-            'team' => 'required|in:A,B,C,D',
-            'machine_name' => 'required|string|max:255',
+            'shift' => 'required|string',
+            'team' => 'nullable|string',
+            'machine_name' => 'required|string',
             'problem_description' => 'required|string',
-            'lototo_status' => 'nullable|in:Sudah,Belum',
+            'lototo_status' => 'required|in:Sudah,Belum',
         ]);
 
-        $data = [
-            'handover_date' => $request->handover_date,
-            'shift' => $request->shift,
-            'team' => $request->team,
-            'machine_name' => strtoupper(trim($request->machine_name)),
-            'problem_description' => $request->problem_description,
+        $handover = Handover::create([
+            'handover_date' => $validated['handover_date'],
+            'shift' => $validated['shift'],
+            'team' => $validated['team'] ?? null,
+            'machine_name' => strtoupper(trim($validated['machine_name'])),
+            'problem_description' => $validated['problem_description'],
+            'lototo_status' => $validated['lototo_status'],
             'status' => 'OPEN',
-            'reported_by' => auth()->user()->name ?? 'Teknisi',
-        ];
+            'reported_by' => auth()->user()?->name ?? 'Teknisi',
+        ]);
 
-        // Pengaman: Hanya sertakan lototo_status jika kolomnya memang sudah ada di database
-        if (Schema::hasColumn('handovers', 'lototo_status')) {
-            $data['lototo_status'] = $request->lototo_status ?? 'Belum';
-        }
+        SendWhatsappHandoverJob::dispatch($handover);
 
-        Handover::create($data);
-
-        return redirect()->route('handover.index')->with('success', 'Laporan Handover berhasil ditambahkan!');
+        return redirect()->back(fallback: route('handover.index'))
+            ->with('success', 'Data logbook berhasil disimpan & notifikasi WA terkirim!');
     }
 
     /**
@@ -75,11 +65,12 @@ class HandoverController extends Controller
 
         $handover->update([
             'status' => 'CLOSED',
-            'resolved_by' => auth()->user()->name ?? 'Teknisi Shift Lanjutan',
+            'resolved_by' => auth()->user()?->name ?? 'Teknisi Shift Lanjutan',
             'resolved_at' => Carbon::now(),
         ]);
 
-        return redirect()->back()->with('success', 'Problem mesin berhasil dikonfirmasi SELESAI!');
+        return redirect()->back(fallback: route('handover.index'))
+            ->with('success', 'Problem mesin berhasil dikonfirmasi SELESAI!');
     }
 
     /**
