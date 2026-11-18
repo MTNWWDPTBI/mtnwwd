@@ -195,19 +195,35 @@ class ImportController extends Controller
                 continue;
             }
 
-            // Parsing tanggal (aman jika formatnya berantakan)
-            $dateParsed = null;
-            if (! empty($row[2])) {
+            // Parsing tanggal secara eksplisit agar kebal format DD-MM-YYYY / DD.MM.YY
+            $dateObject = null;
+            $rawDate = $cleanText($row[2] ?? null);
+
+            if (! empty($rawDate)) {
                 try {
-                    $dateParsed = Carbon::parse($row[2])->format('Y-m-d');
+                    if (preg_match('/^(\d{1,2})[\.\/\-](\d{1,2})[\.\/\-](\d{2})$/', $rawDate, $m)) {
+                        // Format 2 digit tahun: 04.10.26 -> 2026-10-04
+                        $dateObject = Carbon::createFromFormat('d-m-y', "{$m[1]}-{$m[2]}-{$m[3]}");
+                    } elseif (preg_match('/^(\d{1,2})[\.\/\-](\d{1,2})[\.\/\-](\d{4})$/', $rawDate, $m)) {
+                        // Format 4 digit tahun: 31-10-2026 -> 2026-10-31
+                        $dateObject = Carbon::createFromFormat('d-m-Y', "{$m[1]}-{$m[2]}-{$m[3]}");
+                    } else {
+                        $dateObject = Carbon::parse($rawDate);
+                    }
                 } catch (\Exception $e) {
-                    $dateParsed = null;
+                    $dateObject = null;
                 }
             }
 
+            $dateParsed = $dateObject ? $dateObject->format('Y-m-d') : null;
+
+            // Otomatis isi month & week dari tanggal (atau pakai bawaan CSV jika tanggal kosong)
+            $monthValue = $dateObject ? $dateObject->format('m.Y') : $cleanText($row[0] ?? null);
+            $weekValue = $dateObject ? $dateObject->format('W.Y') : $cleanText($row[1] ?? null);
+
             $dataToInsert[] = [
-                'month' => $cleanText($row[0] ?? null),
-                'week' => $cleanText($row[1] ?? null),
+                'month' => $monthValue,
+                'week' => $weekValue,
                 'date' => $dateParsed,
                 'cat' => $cleanText($row[3] ?? null),
                 'type' => $cleanText($row[4] ?? null),
