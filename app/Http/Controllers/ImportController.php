@@ -258,15 +258,19 @@ class ImportController extends Controller
         fclose($fileHandle);
 
         try {
-            // Pecah data per 250 baris agar ringan masuk ke database
-            $chunks = array_chunk($dataToInsert, 250);
-            foreach ($chunks as $chunk) {
-                SapHistory::insert($chunk);
-            }
+         // Kosongkan seluruh isi tabel sap_histories agar tidak ada sisa data lama/error
+         SapHistory::truncate();
 
-            return back()->with('success', count($dataToInsert).' Baris Data History SAP berhasil di-import!');
+         // Pecah data per 250 baris agar ringan masuk ke database
+         $chunks = array_chunk($dataToInsert, 250);
+         foreach ($chunks as $chunk) {
+             SapHistory::insert($chunk);
+         }
 
-        } catch (\Throwable $e) {
+         return back()->with('success', 'Database dibersihkan & '.count($dataToInsert).' Baris Data History SAP baru berhasil di-import!');
+         } 
+        
+        catch (\Throwable $e) {
             // Menangkap semua bentuk error MySQL
             return back()->with('error', 'Terjadi error saat menyimpan ke MySQL: '.$e->getMessage());
         }
