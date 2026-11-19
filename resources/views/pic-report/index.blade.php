@@ -668,13 +668,29 @@
             });
         }
 
+        let myChart = null;
+        let lastChartData = null;
+
         // Render Chart.js
         function renderChart(labels, frequencies, downtimes) {
+            lastChartData = { labels, frequencies, downtimes };
             const ctx = document.getElementById('chartTopParts').getContext('2d');
+            const isDark = document.documentElement.classList.contains('dark');
 
             if (myChart) {
                 myChart.destroy();
             }
+
+            // Warna dinamis sesuai tema Light / Dark
+            const barFreqColor = isDark ? '#00a884' : '#14b8a6';
+            const barDownColor = isDark ? '#fda481' : '#fb923c';
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#e2e8f0';
+            const textColor = isDark ? '#94a3b8' : '#475569';
+            const legendColor = isDark ? '#cbd5e1' : '#475569';
+            const tooltipBg = isDark ? '#111b21' : '#ffffff';
+            const tooltipTitle = isDark ? '#f1f5f9' : '#1e293b';
+            const tooltipBody = isDark ? '#cbd5e1' : '#475569';
+            const tooltipBorder = isDark ? '#222e35' : '#e2e8f0';
 
             myChart = new Chart(ctx, {
                 type: 'bar',
@@ -684,8 +700,8 @@
                         {
                             label: 'Frekuensi Kerusakan (Kali)',
                             data: frequencies,
-                            backgroundColor: '#00a884',
-                            borderColor: '#00a884',
+                            backgroundColor: barFreqColor,
+                            borderColor: barFreqColor,
                             borderRadius: 6,
                             borderWidth: 1,
                             yAxisID: 'y'
@@ -693,8 +709,8 @@
                         {
                             label: 'Total Downtime (Jam)',
                             data: downtimes,
-                            backgroundColor: '#fda481',
-                            borderColor: '#fda481',
+                            backgroundColor: barDownColor,
+                            borderColor: barDownColor,
                             borderRadius: 6,
                             borderWidth: 1,
                             yAxisID: 'y1'
@@ -711,24 +727,24 @@
                     plugins: {
                         legend: {
                             labels: {
-                                color: '#cbd5e1',
+                                color: legendColor,
                                 font: { size: 11, family: 'Figtree, sans-serif' }
                             }
                         },
                         tooltip: {
-                            backgroundColor: '#111b21',
-                            titleColor: '#f1f5f9',
-                            bodyColor: '#cbd5e1',
-                            borderColor: '#222e35',
+                            backgroundColor: tooltipBg,
+                            titleColor: tooltipTitle,
+                            bodyColor: tooltipBody,
+                            borderColor: tooltipBorder,
                             borderWidth: 1,
                             padding: 10
                         }
                     },
                     scales: {
                         x: {
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            grid: { color: gridColor },
                             ticks: {
-                                color: '#94a3b8',
+                                color: textColor,
                                 font: { size: 10 },
                                 maxRotation: 25,
                                 minRotation: 0
@@ -738,12 +754,12 @@
                             type: 'linear',
                             display: true,
                             position: 'left',
-                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                            ticks: { color: '#00a884', font: { size: 10 } },
+                            grid: { color: gridColor },
+                            ticks: { color: barFreqColor, font: { size: 10 } },
                             title: {
                                 display: true,
                                 text: 'Frekuensi (Kali)',
-                                color: '#00a884',
+                                color: barFreqColor,
                                 font: { size: 11 }
                             }
                         },
@@ -752,11 +768,11 @@
                             display: true,
                             position: 'right',
                             grid: { drawOnChartArea: false },
-                            ticks: { color: '#fda481', font: { size: 10 } },
+                            ticks: { color: barDownColor, font: { size: 10 } },
                             title: {
                                 display: true,
                                 text: 'Downtime (Jam)',
-                                color: '#fda481',
+                                color: barDownColor,
                                 font: { size: 11 }
                             }
                         }
@@ -764,6 +780,13 @@
                 }
             });
         }
+
+        // Listener re-render grafik otomatis seketika saat tema diganti
+        window.addEventListener('theme-changed', function(e) {
+            if (lastChartData && myChart) {
+                renderChart(lastChartData.labels, lastChartData.frequencies, lastChartData.downtimes);
+            }
+        });
 
         // 2. Salin Grafik ke Clipboard (Direct Image Blob Paste for PowerPoint)
         async function copyChartToClipboard() {
@@ -780,7 +803,8 @@
                 tempCanvas.height = canvas.height;
                 const tempCtx = tempCanvas.getContext('2d');
 
-                tempCtx.fillStyle = '#111b21';
+                const isDark = document.documentElement.classList.contains('dark');
+                tempCtx.fillStyle = isDark ? '#111b21' : '#ffffff';
                 tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
                 tempCtx.drawImage(canvas, 0, 0);
 

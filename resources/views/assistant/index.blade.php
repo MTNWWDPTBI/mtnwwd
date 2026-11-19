@@ -295,9 +295,13 @@
                 return { html: html, charts: chartMatches };
             }
 
+            // Registry instance chart AI aktif
+            window.activeAiCharts = window.activeAiCharts || [];
+
             // Render Chart.js setelah elemen canvas masuk DOM
             function instantiateCharts(charts) {
                 if (!charts || charts.length === 0) return;
+                const isDark = document.documentElement.classList.contains('dark');
 
                 charts.forEach(function(item) {
                     let ctx = document.getElementById(item.id);
@@ -321,7 +325,11 @@
 
                     let borderColors = (chartType === 'line') ? '#10b981' : colors.slice(0, labels.length);
 
-                    new Chart(ctx, {
+                    const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#e2e8f0';
+                    const textColor = isDark ? '#94a3b8' : '#475569';
+                    const titleColor = isDark ? '#f1f5f9' : '#1e293b';
+
+                    let chartInstance = new Chart(ctx, {
                         type: chartType,
                         data: {
                             labels: labels,
@@ -342,30 +350,60 @@
                             plugins: {
                                 legend: {
                                     display: (chartType === 'pie' || chartType === 'doughnut'),
-                                    labels: { color: '#94a3b8', font: { size: 11 } }
+                                    labels: { color: textColor, font: { size: 11 } }
                                 },
                                 title: {
                                     display: !!cData.title,
                                     text: cData.title || '',
-                                    color: '#f1f5f9',
+                                    color: titleColor,
                                     font: { size: 13, weight: 'bold' }
                                 }
                             },
                             scales: (chartType === 'pie' || chartType === 'doughnut') ? {} : {
                                 x: {
-                                    ticks: { color: '#94a3b8', font: { size: 10 } },
-                                    grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                                    ticks: { color: textColor, font: { size: 10 } },
+                                    grid: { color: gridColor }
                                 },
                                 y: {
                                     beginAtZero: true,
-                                    ticks: { color: '#94a3b8', font: { size: 10 } },
-                                    grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                                    ticks: { color: textColor, font: { size: 10 } },
+                                    grid: { color: gridColor }
                                 }
                             }
                         }
                     });
+
+                    window.activeAiCharts.push(chartInstance);
                 });
             }
+
+            // Listener perubahan tema untuk update semua chart AI yang aktif
+            window.addEventListener('theme-changed', function(e) {
+                const isDark = e.detail.isDark;
+                const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : '#e2e8f0';
+                const textColor = isDark ? '#94a3b8' : '#475569';
+                const titleColor = isDark ? '#f1f5f9' : '#1e293b';
+
+                if (window.activeAiCharts && window.activeAiCharts.length > 0) {
+                    window.activeAiCharts.forEach(function(chart) {
+                        if (chart.options.plugins && chart.options.plugins.title) {
+                            chart.options.plugins.title.color = titleColor;
+                        }
+                        if (chart.options.plugins && chart.options.plugins.legend) {
+                            chart.options.plugins.legend.labels.color = textColor;
+                        }
+                        if (chart.options.scales && chart.options.scales.x) {
+                            chart.options.scales.x.ticks.color = textColor;
+                            chart.options.scales.x.grid.color = gridColor;
+                        }
+                        if (chart.options.scales && chart.options.scales.y) {
+                            chart.options.scales.y.ticks.color = textColor;
+                            chart.options.scales.y.grid.color = gridColor;
+                        }
+                        chart.update();
+                    });
+                }
+            });
 
             // Render riwayat chat yang sudah dimuat dari Blade
             $('.raw-ai-text[data-rendered="false"]').each(function() {

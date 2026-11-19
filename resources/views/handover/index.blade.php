@@ -63,105 +63,100 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                         <!-- Tanggal Shift -->
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-[#FDA481] mb-2">
-                                TANGGAL SHIFT <span class="text-rose-400">*</span>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-[#FDA481] mb-2">
+                                TANGGAL SHIFT <span class="text-rose-500">*</span>
                             </label>
                             <input type="date" 
                                    name="handover_date" 
                                    required 
                                    value="{{ old('handover_date', date('Y-m-d')) }}"
-                                   style="background-color: #181A2F !important; color: #FFFFFF !important;"
-                                   class="w-full !bg-[#181A2F] border border-[#37415C] rounded-xl text-white text-sm placeholder-slate-500 focus:border-[#FDA481] focus:ring focus:ring-[#FDA481]/20 p-3 [color-scheme:dark] transition">
+                                   class="w-full bg-[#181A2F] border border-[#37415C] rounded-xl text-white text-sm placeholder-slate-500 focus:border-[#FDA481] focus:ring focus:ring-[#FDA481]/20 p-3 transition">
                         </div>
 
                         <!-- Shift Ke- -->
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-[#FDA481] mb-2">
-                                SHIFT KE- <span class="text-rose-400">*</span>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-[#FDA481] mb-2">
+                                SHIFT KE- <span class="text-rose-500">*</span>
                             </label>
                             <select name="shift" 
                                     required 
-                                    style="background-color: #181A2F !important; color: #FFFFFF !important;"
-                                    class="w-full !bg-[#181A2F] border border-[#37415C] rounded-xl text-white text-sm placeholder-slate-500 focus:border-[#FDA481] focus:ring focus:ring-[#FDA481]/20 p-3 transition">
-                                <option value="" class="bg-[#181A2F] text-slate-400">-- Pilih Shift --</option>
-                                <option value="1" class="bg-[#181A2F] text-white" {{ old('shift') == '1' ? 'selected' : '' }}>Shift 1 (Pagi)</option>
-                                <option value="2" class="bg-[#181A2F] text-white" {{ old('shift') == '2' ? 'selected' : '' }}>Shift 2 (Siang)</option>
-                                <option value="3" class="bg-[#181A2F] text-white" {{ old('shift') == '3' ? 'selected' : '' }}>Shift 3 (Malam)</option>
+                                    class="w-full bg-[#181A2F] border border-[#37415C] rounded-xl text-white text-sm placeholder-slate-500 focus:border-[#FDA481] focus:ring focus:ring-[#FDA481]/20 p-3 transition">
+                                <option value="" class="dark:bg-[#181A2F] dark:text-slate-400">-- Pilih Shift --</option>
+                                <option value="1" class="dark:bg-[#181A2F] dark:text-white" {{ old('shift') == '1' ? 'selected' : '' }}>Shift 1 (Pagi)</option>
+                                <option value="2" class="dark:bg-[#181A2F] dark:text-white" {{ old('shift') == '2' ? 'selected' : '' }}>Shift 2 (Siang)</option>
+                                <option value="3" class="dark:bg-[#181A2F] dark:text-white" {{ old('shift') == '3' ? 'selected' : '' }}>Shift 3 (Malam)</option>
                             </select>
                         </div>
 
                         <!-- Grup Tim -->
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-[#FDA481] mb-2">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-[#FDA481] mb-2">
                                 GRUP TIM
                             </label>
                             <select name="team" 
-                                    style="background-color: #181A2F !important; color: #FFFFFF !important;"
-                                    class="w-full !bg-[#181A2F] border border-[#37415C] rounded-xl text-white text-sm placeholder-slate-500 focus:border-[#FDA481] focus:ring focus:ring-[#FDA481]/20 p-3 transition">
-                                <option value="" class="bg-[#181A2F] text-slate-400">-- Pilih Tim --</option>
-                                <option value="A" class="bg-[#181A2F] text-white" {{ old('team') == 'A' ? 'selected' : '' }}>Tim A</option>
-                                <option value="B" class="bg-[#181A2F] text-white" {{ old('team') == 'B' ? 'selected' : '' }}>Tim B</option>
-                                <option value="C" class="bg-[#181A2F] text-white" {{ old('team') == 'C' ? 'selected' : '' }}>Tim C</option>
-                                <option value="D" class="bg-[#181A2F] text-white" {{ old('team') == 'D' ? 'selected' : '' }}>Tim D</option>
+                                    class="w-full bg-[#181A2F] border border-[#37415C] rounded-xl text-white text-sm placeholder-slate-500 focus:border-[#FDA481] focus:ring focus:ring-[#FDA481]/20 p-3 transition">
+                                <option value="" class="dark:bg-[#181A2F] dark:text-slate-400">-- Pilih Tim --</option>
+                                <option value="A" class="dark:bg-[#181A2F] dark:text-white" {{ old('team') == 'A' ? 'selected' : '' }}>Tim A</option>
+                                <option value="B" class="dark:bg-[#181A2F] dark:text-white" {{ old('team') == 'B' ? 'selected' : '' }}>Tim B</option>
+                                <option value="C" class="dark:bg-[#181A2F] dark:text-white" {{ old('team') == 'C' ? 'selected' : '' }}>Tim C</option>
+                                <option value="D" class="dark:bg-[#181A2F] dark:text-white" {{ old('team') == 'D' ? 'selected' : '' }}>Tim D</option>
                             </select>
                         </div>
                     </div>
 
                     <!-- Baris 2: Nama Mesin / Fasilitas -->
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-[#FDA481] mb-2">
-                            NAMA MESIN / FASILITAS <span class="text-rose-400">*</span>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-[#FDA481] mb-2">
+                            NAMA MESIN / FASILITAS <span class="text-rose-500">*</span>
                         </label>
                         <input type="text" 
                                name="machine_name" 
                                required 
                                placeholder="CONTOH: MESIN COMPRESSOR 1, POMPA AIR..." 
                                value="{{ old('machine_name') }}"
-                               style="background-color: #181A2F !important; color: #FFFFFF !important;"
-                               class="w-full !bg-[#181A2F] border border-[#37415C] rounded-xl text-white text-sm placeholder-slate-500 focus:border-[#FDA481] focus:ring focus:ring-[#FDA481]/20 p-3 uppercase transition">
+                               class="w-full bg-[#181A2F] border border-[#37415C] rounded-xl text-white text-sm placeholder-slate-500 focus:border-[#FDA481] focus:ring focus:ring-[#FDA481]/20 p-3 uppercase transition">
                     </div>
 
                     <!-- Baris 3: Detail Problem / Temuan -->
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-[#FDA481] mb-2">
-                            DETAIL PROBLEM / TEMUAN <span class="text-rose-400">*</span>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-[#FDA481] mb-2">
+                            DETAIL PROBLEM / TEMUAN <span class="text-rose-500">*</span>
                         </label>
                         <textarea name="problem_description" 
                                   rows="3" 
                                   required 
                                   placeholder="Jelaskan kendala apa yang terjadi, apa yang sudah dilakukan..."
-                                  style="background-color: #181A2F !important; color: #FFFFFF !important;"
-                                  class="w-full !bg-[#181A2F] border border-[#37415C] rounded-xl text-white text-sm placeholder-slate-500 focus:border-[#FDA481] focus:ring focus:ring-[#FDA481]/20 p-3 transition">{{ old('problem_description') }}</textarea>
+                                  class="w-full bg-[#181A2F] border border-[#37415C] rounded-xl text-white text-sm placeholder-slate-500 focus:border-[#FDA481] focus:ring focus:ring-[#FDA481]/20 p-3 transition">{{ old('problem_description') }}</textarea>
                     </div>
 
                     <!-- Baris 4: LOTOTO CHECKIN/CHECKOUT -->
                     <div class="p-4 bg-[#181A2F] border border-[#37415C] rounded-xl">
-                        <label class="block text-xs font-bold uppercase tracking-wider text-[#FDA481] mb-1 flex items-center gap-1.5">
-                            <svg class="w-4 h-4 text-[#FDA481]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-[#FDA481] mb-1 flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-emerald-600 dark:text-[#FDA481]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                             </svg>
                             <span>LOTOTO CHECKIN/CHECKOUT</span>
-                            <span class="text-rose-400">*</span>
+                            <span class="text-rose-500">*</span>
                         </label>
-                        <p class="text-[11px] text-slate-400 mb-3">
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
                             Apakah mesin/area ini dipasangi gembok dan tag pengaman LOTOTO aktif?
                         </p>
-                        <div class="flex items-center gap-6">
-                            <label class="inline-flex items-center gap-2 cursor-pointer">
+                        <div class="flex flex-wrap items-center gap-4">
+                            <label class="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white dark:bg-[#242E49] border border-slate-300 dark:border-[#37415C] cursor-pointer hover:border-slate-400 dark:hover:border-slate-500 transition shadow-sm">
                                 <input type="radio" 
                                        name="lototo_status" 
                                        value="Belum" 
                                        {{ old('lototo_status', 'Belum') === 'Belum' ? 'checked' : '' }}
-                                       class="w-4 h-4 text-[#B4182D] bg-[#181A2F] border-[#37415C] focus:ring-[#B4182D]">
-                                <span class="text-xs font-semibold text-slate-300">Belum (Tidak Ada LOTOTO)</span>
+                                       class="w-4 h-4 text-rose-600 focus:ring-rose-500 bg-slate-100 dark:bg-[#181A2F] border-slate-300 dark:border-[#37415C]">
+                                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Belum (Tidak Ada LOTOTO)</span>
                             </label>
-                            <label class="inline-flex items-center gap-2 cursor-pointer">
+                            <label class="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white dark:bg-[#242E49] border border-amber-300 dark:border-[#FDA481]/40 cursor-pointer hover:border-amber-400 dark:hover:border-[#FDA481] transition shadow-sm">
                                 <input type="radio" 
                                        name="lototo_status" 
                                        value="Sudah" 
                                        {{ old('lototo_status') === 'Sudah' ? 'checked' : '' }}
-                                       class="w-4 h-4 text-[#B4182D] bg-[#181A2F] border-[#37415C] focus:ring-[#B4182D]">
-                                <span class="text-xs font-bold text-[#FDA481]">Sudah (LOTOTO Terpasang)</span>
+                                       class="w-4 h-4 text-amber-600 dark:text-[#FDA481] focus:ring-amber-500 bg-slate-100 dark:bg-[#181A2F] border-amber-300 dark:border-[#37415C]">
+                                <span class="text-xs font-bold text-amber-800 dark:text-[#FDA481]">Sudah (LOTOTO Terpasang)</span>
                             </label>
                         </div>
                     </div>
@@ -169,7 +164,7 @@
                     <!-- Tombol Aksi Form -->
                     <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-6 border-t border-[#37415C]/60">
                         <button type="reset" 
-                                class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#37415C]/50 hover:bg-[#37415C] text-slate-300 text-xs font-bold transition">
+                                class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-200 dark:bg-[#37415C]/50 hover:bg-slate-300 dark:hover:bg-[#37415C] text-slate-700 dark:text-slate-300 text-xs font-bold transition">
                             Batal
                         </button>
                         <button type="submit" 
@@ -226,7 +221,7 @@
 
                                     <!-- Mesin -->
                                     <td class="px-3 py-3 sm:px-6 sm:py-4 whitespace-nowrap">
-                                        <div class="font-bold text-[#FDA481]">{{ $log->machine_name }}</div>
+                                        <div class="font-bold text-emerald-700 dark:text-[#FDA481]">{{ $log->machine_name }}</div>
                                     </td>
 
                                     <!-- Detail Problem -->

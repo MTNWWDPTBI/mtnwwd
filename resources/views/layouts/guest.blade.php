@@ -7,6 +7,25 @@
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
+        <!-- FOUC Prevention Script -->
+        <script>
+            (function() {
+                try {
+                    const savedTheme = localStorage.getItem('theme');
+                    if (savedTheme === 'light') {
+                        document.documentElement.classList.remove('dark');
+                    } else {
+                        document.documentElement.classList.add('dark');
+                        if (!savedTheme) {
+                            localStorage.setItem('theme', 'dark');
+                        }
+                    }
+                } catch (e) {
+                    document.documentElement.classList.add('dark');
+                }
+            })();
+        </script>
+
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />

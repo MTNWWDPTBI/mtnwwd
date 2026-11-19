@@ -3,14 +3,41 @@
 @tailwind utilities;
 
 @layer base {
+    :root {
+        --color-bg-main: #f1f5f9;
+        --color-bg-surface: #f8fafc;
+        --color-bg-inner: #eef2f6;
+        --color-border: #e2e8f0;
+        --color-text-main: #1e293b;
+        --color-text-muted: #64748b;
+        --color-accent: #059669;
+        --color-accent-bg: #d1fae5;
+    }
+
+    html.dark {
+        --color-bg-main: #181A2F;
+        --color-bg-surface: #242E49;
+        --color-bg-inner: #0F111A;
+        --color-border: #37415C;
+        --color-text-main: #F1F5F9;
+        --color-text-muted: #94A3B8;
+        --color-accent: #FDA481;
+        --color-accent-bg: rgba(253, 164, 129, 0.15);
+    }
+
     body {
-        background-color: #181A2F;
-        color: #F1F5F9;
+        background-color: var(--color-bg-main);
+        color: var(--color-text-main);
         font-family: 'Figtree', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        transition: background-color 0.2s ease, color 0.2s ease;
     }
 }
 
-/* Material Design 3 Surface & Glow */
+/* ========================================================
+   MATERIAL DESIGN 3 & COMPONENT STYLES
+   ======================================================== */
+
+/* Dark Mode Defaults */
 .m3-surface {
     background-color: #242E49;
     border: 1px solid rgba(55, 65, 92, 0.7);
@@ -46,18 +73,317 @@
     border: 1px solid rgba(55, 65, 92, 0.8);
 }
 
-/* Custom Modern Dark Scrollbar */
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
 }
 ::-webkit-scrollbar-track {
-    background: #181A2F;
+    background: var(--color-bg-main);
 }
 ::-webkit-scrollbar-thumb {
-    background: #37415C;
+    background: var(--color-border);
     border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #FDA481;
+    background: var(--color-accent);
+}
+
+/* ========================================================
+   LIGHT THEME OVERRIDES (Low-Glare, Warm, Soft Palette)
+   ======================================================== */
+html:not(.dark) {
+    color-scheme: light;
+}
+
+html:not(.dark) body {
+    background-color: #f1f5f9 !important;
+    color: #1e293b !important;
+}
+
+/* 1. Background Layout & Cards */
+html:not(.dark) .bg-\[\#181A2F\],
+html:not(.dark) .bg-\[\#181A2F\]\/90,
+html:not(.dark) .bg-\[\#181A2F\]\/80,
+html:not(.dark) .bg-\[\#181A2F\]\/60,
+html:not(.dark) .bg-\[\#181A2F\]\/40 {
+    background-color: #f1f5f9 !important;
+}
+
+html:not(.dark) .bg-\[\#242E49\],
+html:not(.dark) .bg-\[\#202c33\],
+html:not(.dark) .bg-\[\#242E49\]\/90,
+html:not(.dark) .bg-\[\#242E49\]\/80,
+html:not(.dark) .bg-\[\#242E49\]\/70,
+html:not(.dark) .bg-\[\#242E49\]\/60,
+html:not(.dark) .bg-\[\#242E49\]\/40 {
+    background-color: #f8fafc !important;
+}
+
+html:not(.dark) .bg-\[\#0F111A\],
+html:not(.dark) .bg-\[\#111b21\],
+html:not(.dark) .bg-\[\#0b141a\],
+html:not(.dark) .bg-\[\#182229\] {
+    background-color: #eef2f6 !important;
+}
+
+html:not(.dark) .bg-\[\#37415C\],
+html:not(.dark) .bg-\[\#37415C\]\/40,
+html:not(.dark) .bg-\[\#37415C\]\/50 {
+    background-color: #e2e8f0 !important;
+    color: #475569 !important;
+}
+
+/* 2. Borders & Dividers */
+html:not(.dark) .border-\[\#37415C\],
+html:not(.dark) .border-\[\#37415C\]\/80,
+html:not(.dark) .border-\[\#37415C\]\/70,
+html:not(.dark) .border-\[\#37415C\]\/60,
+html:not(.dark) .border-\[\#37415C\]\/50,
+html:not(.dark) .border-\[\#37415C\]\/40,
+html:not(.dark) .border-\[\#222e35\],
+html:not(.dark) .border-\[\#2a3942\]\/50,
+html:not(.dark) .border-slate-700,
+html:not(.dark) .border-slate-800 {
+    border-color: #e2e8f0 !important;
+}
+
+/* 3. Typography & Text Hierarchy */
+html:not(.dark) h1.text-white,
+html:not(.dark) h2.text-white,
+html:not(.dark) h3.text-white,
+html:not(.dark) h4.text-white,
+html:not(.dark) span.text-white:not([class*="bg-"]):not(button *):not(.btn *),
+html:not(.dark) p.text-white:not([class*="bg-"]),
+html:not(.dark) div.text-white:not([class*="bg-"]):not(button *):not(.btn *),
+html:not(.dark) td.text-white,
+html:not(.dark) th.text-white {
+    color: #1e293b !important;
+}
+
+html:not(.dark) .text-slate-100 {
+    color: #1e293b !important;
+}
+
+html:not(.dark) .text-slate-200 {
+    color: #334155 !important;
+}
+
+html:not(.dark) .text-slate-300 {
+    color: #475569 !important;
+}
+
+html:not(.dark) .text-slate-400 {
+    color: #64748b !important;
+}
+
+html:not(.dark) .text-slate-500 {
+    color: #94a3b8 !important;
+}
+
+/* Soft Emerald for Action Links */
+html:not(.dark) a.text-\[\#FDA481\],
+html:not(.dark) button.text-\[\#FDA481\] {
+    color: #059669 !important;
+}
+
+html:not(.dark) a.text-\[\#FDA481\]:hover,
+html:not(.dark) button.text-\[\#FDA481\]:hover {
+    color: #047857 !important;
+}
+
+/* Soft Badges */
+html:not(.dark) .bg-\[\#FDA481\]\/15,
+html:not(.dark) .bg-\[\#FDA481\]\/20 {
+    background-color: #ffedd5 !important;
+    color: #c2410c !important;
+    border-color: #fed7aa !important;
+}
+
+/* 4. Form Controls: Input, Select, Textarea */
+html:not(.dark) input[type="text"],
+html:not(.dark) input[type="search"],
+html:not(.dark) input[type="password"],
+html:not(.dark) input[type="email"],
+html:not(.dark) input[type="number"],
+html:not(.dark) input[type="date"],
+html:not(.dark) select,
+html:not(.dark) textarea {
+    background-color: #ffffff !important;
+    color: #1e293b !important;
+    border-color: #cbd5e1 !important;
+    color-scheme: light !important;
+}
+
+html.dark input[type="date"] {
+    color-scheme: dark !important;
+}
+
+html:not(.dark) input[type="radio"],
+html:not(.dark) input[type="checkbox"] {
+    background-color: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+}
+
+html:not(.dark) select option {
+    background-color: #ffffff !important;
+    color: #1e293b !important;
+}
+
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+    color: #94a3b8 !important;
+}
+
+html:not(.dark) input:focus,
+html:not(.dark) select:focus,
+html:not(.dark) textarea:focus {
+    border-color: #059669 !important;
+    --tw-ring-color: rgba(5, 150, 105, 0.25) !important;
+}
+
+/* 5. Tables */
+html:not(.dark) table thead tr th {
+    background-color: #eef2f6 !important;
+    color: #334155 !important;
+    border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) table tbody tr {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) table tbody tr:hover {
+    background-color: #f1f5f9 !important;
+}
+
+html:not(.dark) table td {
+    color: #1e293b !important;
+    border-color: #e2e8f0 !important;
+}
+
+/* 6. M3 Components in Light Theme */
+html:not(.dark) .m3-surface {
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
+}
+
+html:not(.dark) .m3-surface:hover {
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.03) !important;
+}
+
+html:not(.dark) .m3-gradient-banner {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 45%, #fff7ed 80%, #ffedd5 100%) !important;
+    border-color: #fed7aa !important;
+}
+
+html:not(.dark) .m3-gradient-banner h1,
+html:not(.dark) .m3-gradient-banner p {
+    color: #1e293b !important;
+}
+
+html:not(.dark) .m3-badge-peach {
+    background: #ffedd5 !important;
+    color: #c2410c !important;
+    border-color: #fed7aa !important;
+}
+
+html:not(.dark) .m3-badge-crimson {
+    background: #ffe4e6 !important;
+    color: #be123c !important;
+    border-color: #fecdd3 !important;
+}
+
+html:not(.dark) .m3-badge-slate {
+    background: #e2e8f0 !important;
+    color: #475569 !important;
+    border-color: #cbd5e1 !important;
+}
+
+/* 7. Sidebar Navigation Active State */
+html:not(.dark) nav a.bg-\[\#242E49\] {
+    background-color: #d1fae5 !important; /* Soft Emerald highlight */
+    color: #065f46 !important;
+    border-color: #059669 !important;
+}
+
+html:not(.dark) nav a.bg-\[\#242E49\] svg {
+    color: #059669 !important;
+}
+
+html:not(.dark) nav a:not(.bg-\[\#242E49\]):hover {
+    background-color: rgba(226, 232, 240, 0.7) !important;
+    color: #0f172a !important;
+}
+
+/* 8. AI Chat Assistant */
+html:not(.dark) #chat-box {
+    background-color: #f1f5f9 !important;
+    background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px) !important;
+}
+
+html:not(.dark) .ai-content {
+    background-color: #ffffff !important;
+    color: #1e293b !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
+
+html:not(.dark) .ai-content strong {
+    color: #0f172a !important;
+}
+
+html:not(.dark) .ai-content table {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+html:not(.dark) .ai-content th {
+    background-color: #eef2f6 !important;
+    color: #065f46 !important;
+    border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) .ai-content td {
+    color: #1e293b !important;
+    border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) .ai-content code {
+    background-color: #eef2f6 !important;
+    color: #0f766e !important;
+    border-color: #cbd5e1 !important;
+}
+
+html:not(.dark) .chart-box-container {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* User chat bubble */
+html:not(.dark) #chat-box .bg-emerald-600,
+html:not(.dark) #chat-box .bg-blue-600 {
+    background-color: #dcfce7 !important;
+    color: #14532d !important;
+    border: 1px solid #bbf7d0 !important;
+}
+
+/* 9. Modals & Dialogs */
+html:not(.dark) [x-show="show"] .bg-\[\#242E49\],
+html:not(.dark) [x-show="show"] .bg-\[\#202c33\],
+html:not(.dark) .modal-content {
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 10. Smooth transitions */
+*, *::before, *::after {
+    transition-property: background-color, border-color;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
