@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Imports\PicMachineImport;
+use App\Models\PicMachine;
 use App\Models\SapHistory;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,6 +14,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PicReportController extends Controller
 {
@@ -21,13 +24,34 @@ class PicReportController extends Controller
     public function index(): View
     {
         $user = auth()->user();
+        $isAdmin = ($user->role === 'admin' || (bool) ($user->is_admin ?? false));
+
+        // Ambil HANYA daftar mesin PIC yang ditugaskan ke akun yang sedang login
         $machines = $user->picMachines()
             ->orderBy('functional_location')
             ->pluck('functional_location')
             ->unique()
             ->values();
 
-        return view('pic-report.index', compact('machines'));
+        // Tentukan default bulan dari data historis SAP terbaru yang riil (agar tidak kosong)
+        $latestDate = SapHistory::whereNotNull('date')
+            ->where('date', '<=', now()->toDateString())
+            ->max('date');
+
+        if ($latestDate && preg_match('/^(\d{4}-\d{2})/', $latestDate, $m)) {
+            $defaultMonth = $m[1];
+        } else {
+            $latestMonth = SapHistory::whereNotNull('month')
+                ->where('month', '!=', 'Total')
+                ->max('month');
+            if ($latestMonth && preg_match('/^(\d{1,2})\.(\d{4})$/', $latestMonth, $mm)) {
+                $defaultMonth = sprintf('%04d-%02d', $mm[2], $mm[1]);
+            } else {
+                $defaultMonth = date('Y-m');
+            }
+        }
+
+        return view('pic-report.index', compact('machines', 'defaultMonth', 'isAdmin'));
     }
 
     /**
@@ -43,7 +67,13 @@ class PicReportController extends Controller
 
         $monthInput = $request->string('month')->trim()->value();
         $user = auth()->user();
-        $userMachines = $user->picMachines()->pluck('functional_location')->toArray();
+
+        // Ambil HANYA mesin PIC milik akun user yang sedang login
+        $userMachines = $user->picMachines()
+            ->pluck('functional_location')
+            ->unique()
+            ->values()
+            ->toArray();
 
         if (empty($userMachines)) {
             return response()->json([
@@ -51,25 +81,26 @@ class PicReportController extends Controller
                 'labels' => [],
                 'frequencies' => [],
                 'downtimes' => [],
-                'message' => 'Anda belum memiliki mesin yang ditugaskan sebagai PIC.',
+                'message' => 'Anda belum memiliki mesin yang ditugaskan sebagai PIC. Silakan hubungi Administrator untuk pemetaan mesin PIC akun Anda.',
             ]);
         }
 
-        // Tentukan daftar mesin yang difilter (bisa 1 mesin, beberapa mesin, atau semua mesin milik PIC)
+        // Tentukan daftar mesin yang difilter (terisolasi ketat hanya dalam lingkup PIC user ini)
         $filterMachines = $this->resolveFilteredMachines($request, $userMachines);
 
-        // Parsing filter bulan (Mendukung format 'YYYY-MM' dan format SAP 'MM.YYYY')
+        // Parsing filter bulan (Mendukung format 'YYYY-MM' dan format SAP 'MM.YYYY' atau 'M.YYYY')
         $dashMonth = $monthInput;
-        $dotMonth = $this->formatToSapMonth($monthInput);
+        $sapMonths = $this->formatToSapMonths($monthInput);
 
         // Query Top 5 Object Part berdasarkan frekuensi kerusakan beserta total bm_hrs
         $topParts = SapHistory::whereIn('functional_location', $filterMachines)
-            ->where(function ($q) use ($dashMonth, $dotMonth) {
+            ->where(function ($q) use ($dashMonth, $sapMonths) {
                 $q->where('date', 'like', "{$dashMonth}%")
-                    ->orWhere('month', $dotMonth);
+                    ->orWhereIn('month', $sapMonths);
             })
             ->whereNotNull('object_part')
             ->where('object_part', '!=', '')
+            ->where('object_part', '!=', 'Total')
             ->select(
                 'object_part',
                 DB::raw('COUNT(*) as frequency'),
@@ -97,7 +128,7 @@ class PicReportController extends Controller
     }
 
     /**
-     * Generate ringkasan 3 poin PPT menggunakan AI Gateway berdasarkan SELURUH riwayat kerusakan bulanan (AJAX).
+     * Generate ringkasan 3 poin PPT menggunakan AI Gateway berdasarkan riwayat kerusakan bulanan (AJAX).
      */
     public function generateAiSummary(Request $request): JsonResponse
     {
@@ -109,7 +140,13 @@ class PicReportController extends Controller
 
         $monthInput = $request->string('month')->trim()->value();
         $user = auth()->user();
-        $userMachines = $user->picMachines()->pluck('functional_location')->toArray();
+
+        // Ambil HANYA mesin PIC milik akun user yang sedang login
+        $userMachines = $user->picMachines()
+            ->pluck('functional_location')
+            ->unique()
+            ->values()
+            ->toArray();
 
         if (empty($userMachines)) {
             return response()->json([
@@ -126,18 +163,19 @@ class PicReportController extends Controller
         } elseif (count($filterMachines) === count($userMachines)) {
             $machineLabel = 'Semua Mesin PIC Anda ('.count($userMachines).' Unit)';
         } else {
-            $machineLabel = count($filterMachines).' Mesin PIC Terpilih ('.implode(', ', $filterMachines).')';
+            $machineLabel = count($filterMachines).' Mesin PIC Terpilih ('.implode(', ', array_slice($filterMachines, 0, 3)).(count($filterMachines) > 3 ? '...' : '').')';
         }
 
         $dashMonth = $monthInput;
-        $dotMonth = $this->formatToSapMonth($monthInput);
+        $sapMonths = $this->formatToSapMonths($monthInput);
 
-        // Query dasar seluruh riwayat kerusakan pada bulan dan mesin terpilih (tanpa batasan limit 10)
+        // Query dasar seluruh riwayat kerusakan pada bulan dan mesin terpilih
         $baseQuery = SapHistory::whereIn('functional_location', $filterMachines)
-            ->where(function ($q) use ($dashMonth, $dotMonth) {
+            ->where(function ($q) use ($dashMonth, $sapMonths) {
                 $q->where('date', 'like', "{$dashMonth}%")
-                    ->orWhere('month', $dotMonth);
-            });
+                    ->orWhereIn('month', $sapMonths);
+            })
+            ->where('functional_location', '!=', 'Total');
 
         // 1. Total Order / WO Kerusakan dalam sebulan
         $totalOrders = (clone $baseQuery)->count();
@@ -145,7 +183,7 @@ class PicReportController extends Controller
         if ($totalOrders === 0) {
             return response()->json([
                 'status' => 'success',
-                'summary' => "ℹ️ **Tidak ada data kerusakan** ditemukan untuk {$machineLabel} pada periode {$monthInput}. Pastikan histori data SAP untuk bulan ini telah diimpor.",
+                'summary' => "ℹ️ **Tidak ada data kerusakan** ditemukan untuk {$machineLabel} pada periode {$monthInput}. Silakan pilih periode bulan lain yang memiliki riwayat kerusakan di SAP (contoh: 2026-10).",
             ]);
         }
 
@@ -186,6 +224,7 @@ class PicReportController extends Controller
             )
             ->whereNotNull('object_part')
             ->where('object_part', '!=', '')
+            ->where('object_part', '!=', 'Total')
             ->groupBy('object_part')
             ->orderByDesc('frequency')
             ->get();
@@ -196,7 +235,7 @@ class PicReportController extends Controller
         }
         $partSummary = ! empty($partLines) ? implode("\n", $partLines) : '- Komponen tidak terspesifikasi pada order SAP';
 
-        // 5. Rincian Kode Mesin per Komponen Dominan (Mesin penyumbang kerusakan terbanyak untuk tiap komponen dominan)
+        // 5. Rincian Kode Mesin per Komponen Dominan
         $topPartNames = $partStats->take(3)->pluck('object_part')->toArray();
         $partMachineStats = (clone $baseQuery)
             ->select(
@@ -222,7 +261,7 @@ class PicReportController extends Controller
         }
         $partMachineSummary = ! empty($partMachineLines) ? implode("\n", $partMachineLines) : '- Data rincian mesin per komponen tidak tersedia';
 
-        // 6. Daftar seluruh deskripsi masalah (maint_order_desc / problem) yang terjadi selama bulan tersebut
+        // 6. Daftar seluruh deskripsi masalah
         $problemStats = (clone $baseQuery)
             ->select(
                 DB::raw("COALESCE(NULLIF(problem, ''), maint_order_desc) as problem_desc"),
@@ -243,7 +282,7 @@ class PicReportController extends Controller
         }
         $problemSummary = ! empty($problemLines) ? implode("\n", $problemLines) : '- Tidak ada catatan deskripsi masalah spesifik';
 
-        // 7. Susun prompt teks untuk AI sesuai instruksi spesifikasi analisis penuh 1 bulan
+        // 7. Susun prompt teks untuk AI
         $prompt = "Kamu adalah Senior Maintenance Engineer pabrik Bekaert. Diberikan data riwayat kerusakan mesin sebulan penuh (Periode: {$monthInput}) untuk {$machineLabel}.\n"
             ."WAJIB: Di setiap poin analisis (terutama Fokus Masalah dan Action Plan), sebutkan secara spesifik KODE MESIN (functional_location) utama yang menjadi biang kerok (bad actor).\n\n"
             ."=== DATA STATISTIK BULANAN ({$monthInput}) ===\n"
@@ -275,7 +314,7 @@ class PicReportController extends Controller
         $fallbackData = [
             'total_orders' => $totalOrders,
             'total_bm' => $totalBmHours,
-            'top_machine' => $topMachines->first()?->functional_location ?? 'KA-WWD-NDB-3006',
+            'top_machine' => $topMachines->first()?->functional_location ?? ($filterMachines[0] ?? 'Mesin Pabrik'),
             'top_machine_bm' => $topMachines->first()?->total_bm ?? $totalBmHours,
             'top_machine_wo' => $topMachines->first()?->wo_count ?? $totalOrders,
             'top_part' => $partStats->first()?->object_part ?? 'Komponen Utama',
@@ -297,7 +336,6 @@ class PicReportController extends Controller
      */
     public function importPic(Request $request): RedirectResponse
     {
-        // Cek apakah user berstatus admin (role === 'admin' atau is_admin === true)
         if (auth()->user()?->role !== 'admin' && ! (bool) (auth()->user()?->is_admin ?? false)) {
             abort(403, 'Akses Ditolak: Hanya Admin yang memiliki wewenang untuk mengunggah pemetaan mesin PIC.');
         }
@@ -311,9 +349,25 @@ class PicReportController extends Controller
         ]);
 
         try {
-            Excel::import(new PicMachineImport, $request->file('file'));
+            $import = new PicMachineImport();
+            Excel::import($import, $request->file('file'));
 
-            return back()->with('success', 'Pemetaan PIC mesin berhasil diimpor!');
+            if ($import->importedCount > 0) {
+                $msg = "Berhasil mengimpor {$import->importedCount} pemetaan mesin PIC!";
+                if ($import->skippedCount > 0) {
+                    $msg .= " ({$import->skippedCount} baris dilewati karena teknisi/mesin tidak sesuai).";
+                }
+
+                return back()->with('success', $msg);
+            }
+
+            $errMsg = 'Tidak ada data pemetaan PIC yang berhasil diimpor. Pastikan file Excel memuat kolom Nama/Email Teknisi dan Kode Mesin/Functional Location yang sesuai.';
+            if (! empty($import->skippedDetails)) {
+                $errMsg .= ' Rincian: '.implode(' | ', array_slice($import->skippedDetails, 0, 3));
+            }
+
+            return back()->with('error', $errMsg);
+
         } catch (\Throwable $e) {
             Log::error('Import PIC Machine Error: '.$e->getMessage());
 
@@ -322,16 +376,91 @@ class PicReportController extends Controller
     }
 
     /**
-     * Panggil AI Gateway / Anthropic Messages API dengan fallback cerdas.
+     * Download template CSV contoh pemetaan PIC mesin (Khusus Admin).
+     */
+    public function downloadTemplate(): StreamedResponse
+    {
+        if (auth()->user()?->role !== 'admin' && ! (bool) (auth()->user()?->is_admin ?? false)) {
+            abort(403);
+        }
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="template_pemetaan_pic_mesin.csv"',
+        ];
+
+        return response()->stream(function () {
+            $handle = fopen('php://output', 'w');
+            // UTF-8 BOM agar rapi di Microsoft Excel Windows
+            fputs($handle, "\xEF\xBB\xBF");
+
+            // Header kolom
+            fputcsv($handle, ['nama_teknisi', 'email', 'functional_location']);
+
+            // Baris contoh dari data riil di sistem
+            $sampleUsers = User::take(3)->get();
+            $sampleFlocs = SapHistory::whereNotNull('functional_location')
+                ->where('functional_location', '!=', 'Total')
+                ->distinct()
+                ->take(3)
+                ->pluck('functional_location');
+
+            foreach ($sampleUsers as $idx => $user) {
+                fputcsv($handle, [
+                    $user->name,
+                    $user->email,
+                    $sampleFlocs[$idx] ?? 'KA-WWD-NDB-3006',
+                ]);
+            }
+
+            fclose($handle);
+        }, 200, $headers);
+    }
+
+    /**
+     * Panggil AI (Gemini Flash Lite / AI Gateway) dengan fallback statistik cerdas.
      *
-     * @param  array<int, mixed>  $fallbackData
+     * @param  array<string, mixed>  $fallbackData
      */
     private function callAiGateway(string $prompt, array $fallbackData = []): string
     {
+        // 1. Prioritas 1: Gunakan Gemini API (gemini-flash-lite-latest)
+        $geminiKey = env('GEMINI_API_KEY') ?: config('services.gemini.key');
+        if (! empty($geminiKey)) {
+            try {
+                $response = Http::withHeaders([
+                    'Content-Type' => 'application/json',
+                ])->withOptions([
+                    'verify' => false,
+                ])->timeout(12)->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key={$geminiKey}", [
+                    'contents' => [
+                        [
+                            'parts' => [
+                                ['text' => $prompt],
+                            ],
+                        ],
+                    ],
+                ]);
+
+                if ($response->successful()) {
+                    $aiText = $response->json('candidates.0.content.parts.0.text');
+                    if (! empty(trim((string) $aiText))) {
+                        $cleanText = preg_replace('/<think>.*?<\/think>/is', '', $aiText);
+                        $cleanText = preg_replace('/<｜DSML｜.*?<\/｜DSML｜.*?>/is', '', $cleanText);
+
+                        return trim($cleanText);
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::info('PicReport Gemini API attempt failed/timeout: '.$e->getMessage());
+            }
+        }
+
+        // 2. Prioritas 2: Gunakan AI Gateway Relink / Anthropic Messages API
         $baseUrl = config('services.ai_gateway.base_url', 'https://api.relink-gateway.biz.id/v1');
         $apiKey = config('services.ai_gateway.api_key');
         $model = config('services.ai_gateway.model', 'auto');
-        $timeout = (int) config('services.ai_gateway.timeout', 45);
+        $timeout = (int) config('services.ai_gateway.timeout', 15);
 
         if (! empty($apiKey)) {
             $cleanBase = rtrim($baseUrl, '/');
@@ -377,17 +506,12 @@ class PicReportController extends Controller
                         return $combined;
                     }
                 }
-
-                Log::warning('PicReport AI Gateway response unhandled', [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
             } catch (\Throwable $e) {
-                Log::warning('PicReport AI Gateway call failed: '.$e->getMessage());
+                Log::info('PicReport AI Gateway call failed/timeout: '.$e->getMessage());
             }
         }
 
-        // Fallback cerdas jika koneksi AI offline atau tidak tersedia API key
+        // 3. Prioritas 3: Fallback cerdas berbasis data statistik riil mesin bulanan
         return $this->generateFallbackSummary($fallbackData);
     }
 
@@ -400,7 +524,7 @@ class PicReportController extends Controller
     {
         $totalOrders = $data['total_orders'] ?? 0;
         $totalBm = $data['total_bm'] ?? 0;
-        $topMachine = $data['top_machine'] ?? 'KA-WWD-NDB-3006';
+        $topMachine = $data['top_machine'] ?? 'Mesin Pabrik';
         $topMachineBm = $data['top_machine_bm'] ?? $totalBm;
         $topMachineWo = $data['top_machine_wo'] ?? $totalOrders;
         $topPart = $data['top_part'] ?? 'Komponen Utama';
@@ -427,7 +551,7 @@ class PicReportController extends Controller
     }
 
     /**
-     * Tentukan daftar mesin yang difilter, terisolasi ketat hanya dalam lingkup PIC user.
+     * Tentukan daftar mesin yang difilter, terisolasi ketat hanya dalam lingkup PIC akun user yang login.
      *
      * @param  array<int, string>  $userMachines
      * @return array<int, string>
@@ -447,27 +571,36 @@ class PicReportController extends Controller
             $selected = [trim((string) $request->string('machine'))];
         }
 
-        // Filter ketat: pastikan hanya mesin yang benar-benar milik user (anti-kebocoran)
-        $validSelected = array_values(array_intersect($selected, $userMachines));
-
-        // Jika user memilih 1 atau beberapa mesin valid, gunakan pilihan tersebut.
-        // Jika tidak ada yang dipilih (atau memilih opsi "Semua"), gunakan seluruh mesin milik user.
-        if (! empty($validSelected)) {
-            return $validSelected;
+        if (! empty($selected)) {
+            // Filter ketat: pastikan hanya mesin yang benar-benar ada di daftar mesin PIC akun login (anti-kebocoran)
+            $validSelected = array_values(array_intersect($selected, $userMachines));
+            if (! empty($validSelected)) {
+                return $validSelected;
+            }
         }
 
         return $userMachines;
     }
 
     /**
-     * Ubah format input HTML bulan 'YYYY-MM' menjadi format SAP 'MM.YYYY'.
+     * Ubah format input HTML bulan 'YYYY-MM' menjadi format SAP 'MM.YYYY' dan 'M.YYYY'.
+     *
+     * @return array<int, string>
      */
-    private function formatToSapMonth(string $yearMonth): string
+    private function formatToSapMonths(string $yearMonth): array
     {
         if (preg_match('/^(\d{4})-(\d{2})$/', $yearMonth, $m)) {
-            return "{$m[2]}.{$m[1]}";
+            $y = $m[1];
+            $mPadded = $m[2];
+            $mUnpadded = (string) (int) $m[2];
+
+            if ($mPadded !== $mUnpadded) {
+                return ["{$mPadded}.{$y}", "{$mUnpadded}.{$y}"];
+            }
+
+            return ["{$mPadded}.{$y}"];
         }
 
-        return $yearMonth;
+        return [$yearMonth];
     }
 }

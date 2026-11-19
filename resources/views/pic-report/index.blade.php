@@ -12,10 +12,17 @@
             </div>
             
             @if (auth()->user()?->role === 'admin' || (bool) (auth()->user()?->is_admin ?? false))
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('pic.template') }}" 
+                       class="inline-flex items-center gap-1.5 px-3 py-2 bg-[#202c33] hover:bg-[#2a3942] text-slate-300 hover:text-white border border-[#222e35] rounded-xl text-xs font-semibold transition duration-200 shadow">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        <span>Unduh Template</span>
+                    </a>
                     <button type="button" 
                             onclick="openImportModal()" 
-                            class="inline-flex items-center gap-2 px-4 py-2 bg-[#202c33] hover:bg-[#2a3942] text-[#00a884] border border-[#00a884]/40 hover:border-[#00a884] rounded-xl text-sm font-semibold transition duration-200 shadow-lg">
+                            class="inline-flex items-center gap-2 px-3.5 py-2 bg-[#202c33] hover:bg-[#2a3942] text-[#00a884] border border-[#00a884]/40 hover:border-[#00a884] rounded-xl text-xs sm:text-sm font-semibold transition duration-200 shadow-lg">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                         </svg>
@@ -83,7 +90,7 @@
                         <div class="flex items-center gap-2.5 truncate min-w-0 pr-2">
                             <span class="text-base text-[#00a884]">⚙️</span>
                             <span id="selectedMachinesLabel" class="text-slate-100 font-medium truncate">
-                                Semua Mesin Saya ({{ count($machines) }} Mesin)
+                                Semua Mesin PIC Saya ({{ count($machines) }} Mesin)
                             </span>
                         </div>
                         
@@ -105,7 +112,7 @@
                         <div class="relative">
                             <input type="text" 
                                    id="machineSearchInput" 
-                                   placeholder="Cari kode mesin (contoh: 4001)..." 
+                                   placeholder="Cari kode mesin (contoh: 3049, 4018)..." 
                                    class="w-full bg-[#111b21] border border-[#2a3942] focus:border-[#00a884] focus:ring-1 focus:ring-[#00a884] rounded-xl px-3 py-1.5 pl-8 text-xs text-slate-200 placeholder-slate-500 transition">
                             <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -134,7 +141,9 @@
                                        checked
                                        onchange="this.checked ? selectAllMachines() : deselectAllMachines()"
                                        class="w-4 h-4 rounded bg-[#111b21] border-[#2a3942] text-[#00a884] focus:ring-[#00a884] focus:ring-offset-0 cursor-pointer">
-                                <span class="text-xs font-bold text-white">Semua Mesin PIC Saya</span>
+                                <span class="text-xs font-bold text-white">
+                                    Semua Mesin PIC Saya
+                                </span>
                                 <span class="text-[10px] text-slate-400 bg-[#111b21] px-1.5 py-0.5 rounded border border-[#222e35] ml-auto">
                                     {{ count($machines) }} Mesin
                                 </span>
@@ -186,8 +195,8 @@
                     <input type="month" 
                            id="filterMonth" 
                            name="month" 
-                           value="{{ date('Y-m') }}" 
-                           class="w-full bg-[#111b21] border border-[#222e35] focus:border-[#00a884] focus:ring-1 focus:ring-[#00a884] rounded-xl px-4 py-2 text-sm text-slate-100 transition [color-scheme:dark]">
+                           value="{{ $defaultMonth ?? date('Y-m') }}" 
+                           class="w-full bg-[#111b21] border border-[#222e35] focus:border-[#00a884] focus:ring-1 focus:ring-[#00a884] rounded-xl px-4 py-2 text-sm text-slate-100 transition dark:[color-scheme:dark]">
                 </div>
 
                 <!-- Action Button -->
@@ -224,7 +233,7 @@
                         
                         <button type="button" 
                                 id="btnCopyChart" 
-                                onclick="copyChartToClipboard()"
+                                onclick="copyChartToClipboard()" 
                                 title="Salin gambar grafik ke clipboard untuk di-paste langsung (Ctrl+V) ke PowerPoint"
                                 class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#111b21] hover:bg-[#182229] text-[#00a884] hover:text-white border border-[#00a884]/40 hover:border-[#00a884] rounded-lg text-xs font-medium transition shadow">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -321,7 +330,7 @@
                             </div>
                             <h4 class="text-sm font-semibold text-slate-200">Materi Slide PPT Belum Digenerate</h4>
                             <p class="text-xs text-slate-400 max-w-sm mt-1">
-                                Klik tombol <strong>"Generate Summary PPT"</strong> untuk menyusun analisis otomatis 3 poin (Fokus Masalah, Root Cause, Action Plan & TPM) berdasarkan seluruh riwayat kerusakan pada periode bulan yang dipilih.
+                                Klik tombol <strong>"Generate Summary PPT"</strong> untuk menyusun analisis otomatis 3 poin (Fokus Masalah, Root Cause, Action Plan & TPM) berdasarkan riwayat kerusakan pada periode bulan yang dipilih.
                             </p>
                         </div>
 
@@ -333,7 +342,7 @@
                                 <span class="typing-dot"></span>
                             </div>
                             <p class="text-xs font-semibold text-[#00a884] animate-pulse">
-                                AI sedang menganalisis seluruh riwayat kerusakan pada bulan terpilih...
+                                AI sedang menganalisis riwayat kerusakan pada bulan terpilih...
                             </p>
                             <p class="text-[11px] text-slate-500">
                                 Menyusun fokus masalah terbanyak, analisis akar masalah, dan action plan & TPM preventif
@@ -362,7 +371,7 @@
         <!-- Modal Form Upload Excel PIC -->
         <div id="importModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/80 backdrop-blur-sm transition-opacity">
             <div class="flex min-h-screen items-center justify-center p-4">
-                <div class="w-full max-w-md bg-[#202c33] border border-[#222e35] rounded-2xl shadow-2xl p-6 relative">
+                <div class="w-full max-w-lg bg-[#202c33] border border-[#222e35] rounded-2xl shadow-2xl p-6 relative">
                     
                     <!-- Close Button -->
                     <button type="button" 
@@ -380,17 +389,28 @@
                         </div>
                         <div>
                             <h3 class="text-base font-bold text-white">Import Pemetaan Mesin PIC</h3>
-                            <p class="text-xs text-slate-400">Unggah file Excel pemetaan mesin teknisi</p>
+                            <p class="text-xs text-slate-400">Unggah file Excel / CSV pemetaan mesin teknisi</p>
                         </div>
                     </div>
 
-                    <!-- Petunjuk Format Header -->
-                    <div class="mb-4 p-3 bg-[#111b21] border border-[#222e35] rounded-xl text-xs text-slate-300">
-                        <p class="font-semibold text-[#00a884] mb-1">Format Header Kolom Excel:</p>
-                        <p class="text-slate-400 mb-2">Pastikan baris pertama (header) memuat kolom berikut:</p>
+                    <!-- Petunjuk Format Header & Link Download Template -->
+                    <div class="mb-4 p-3.5 bg-[#111b21] border border-[#222e35] rounded-xl text-xs text-slate-300 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-semibold text-[#00a884]">Format Kolom Header yang Didukung:</span>
+                            <a href="{{ route('pic.template') }}" class="text-xs text-[#00a884] hover:underline font-semibold flex items-center gap-1">
+                                📥 Unduh Template
+                            </a>
+                        </div>
+                        <p class="text-slate-400 text-[11px]">Sistem secara otomatis mendeteksi kolom berikut pada file Excel/CSV:</p>
                         <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
-                            <span class="bg-[#182229] p-1.5 rounded border border-[#222e35] text-slate-200">email (atau nik)</span>
-                            <span class="bg-[#182229] p-1.5 rounded border border-[#222e35] text-slate-200">functional_location</span>
+                            <div class="bg-[#182229] p-2 rounded border border-[#222e35]">
+                                <span class="text-emerald-400 font-semibold block mb-0.5">Kolom Teknisi:</span>
+                                <span class="text-slate-300">nama_teknisi, nama, pic, email, atau nik</span>
+                            </div>
+                            <div class="bg-[#182229] p-2 rounded border border-[#222e35]">
+                                <span class="text-emerald-400 font-semibold block mb-0.5">Kolom Mesin:</span>
+                                <span class="text-slate-300">functional_location, kode_mesin, atau mesin</span>
+                            </div>
                         </div>
                     </div>
 
@@ -472,12 +492,37 @@
         .ai-content li { margin-bottom: 0.25rem; }
         .ai-content p { margin-bottom: 0.6rem; }
         .ai-content p:last-child { margin-bottom: 0; }
+
+        /* Light Theme Overrides for AI Summary */
+        html:not(.dark) .ai-content h1,
+        html:not(.dark) .ai-content h2,
+        html:not(.dark) .ai-content h3,
+        html:not(.dark) .ai-content h4 {
+            color: #1e293b !important;
+        }
+        html:not(.dark) .ai-content h3 {
+            color: #059669 !important;
+        }
+        html:not(.dark) .ai-content strong {
+            color: #0f172a !important;
+        }
+        html:not(.dark) .ai-content,
+        html:not(.dark) .ai-content p,
+        html:not(.dark) .ai-content li {
+            color: #334155 !important;
+        }
+        html:not(.dark) #aiSummaryBox {
+            background-color: #f8fafc !important;
+            border-color: #e2e8f0 !important;
+        }
     </style>
 
     <script>
         let myChart = null;
+        let lastChartData = null;
         let lastAiSummaryText = '';
         const totalMachinesCount = {{ count($machines) }};
+        const defaultAllLabel = "Semua Mesin PIC Saya";
 
         // Toast Helper
         function showToast(message) {
@@ -549,7 +594,7 @@
             if (count === 0 || count === totalMachinesCount) {
                 selectAllCb.prop('checked', count === totalMachinesCount);
                 selectAllCb.prop('indeterminate', false);
-                labelSpan.text('Semua Mesin Saya (' + totalMachinesCount + ' Mesin)');
+                labelSpan.text(defaultAllLabel + ' (' + totalMachinesCount + ' Mesin)');
                 badgeSpan.text('Semua (' + totalMachinesCount + ')')
                          .removeClass('bg-sky-500/20 text-sky-400 border-sky-500/30')
                          .addClass('bg-[#00a884]/20 text-[#00a884] border-[#00a884]/30');
@@ -603,7 +648,6 @@
             const checkedBoxes = $('.machine-checkbox:checked');
             const count = checkedBoxes.length;
 
-            // Jika semua dipilih atau tidak ada yang dipilih, kembalikan array kosong (backend mengartikan seluruh mesin PIC user)
             if (count === 0 || count === totalMachinesCount) {
                 return [];
             }
@@ -667,9 +711,6 @@
                 }
             });
         }
-
-        let myChart = null;
-        let lastChartData = null;
 
         // Render Chart.js
         function renderChart(labels, frequencies, downtimes) {
@@ -797,7 +838,7 @@
             }
 
             try {
-                // Buat canvas sementara dengan background gelap solid agar tidak transparan saat di-paste di PPT
+                // Buat canvas sementara dengan background solid agar tidak transparan saat di-paste di PPT
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = canvas.width;
                 tempCanvas.height = canvas.height;

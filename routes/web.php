@@ -73,6 +73,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/pic-report/generate', [PicReportController::class, 'generateReport'])->name('pic.generate');
     Route::post('/pic-report/ai-summary', [PicReportController::class, 'generateAiSummary'])->name('pic.ai-summary');
     Route::post('/pic-report/import', [PicReportController::class, 'importPic'])->name('pic.import');
+    Route::get('/pic-report/template', [PicReportController::class, 'downloadTemplate'])->name('pic.template');
 
     // ========================================================
     // ZONA KHUSUS ADMIN (DIGEMBOK MIDDLEWARE)
