@@ -128,4 +128,23 @@ Route::middleware('auth')->group(function () {
     });
 });
 
+// ========================================================
+// ZONA EKSTERNAL (TRIGGER QUEUE DARI VPS VIA PM2)
+// ========================================================
+Route::get('/trigger-queue/{token}', function ($token) {
+    if ($token !== 'mtn-wwd-secret-2026') {
+        abort(403, 'Unauthorized');
+    }
+
+    Artisan::call('queue:work', [
+        '--stop-when-empty' => true,
+        '--tries' => 3,
+    ]);
+
+    return response()->json([
+        'status' => 'processed',
+        'timestamp' => now()->toDateTimeString(),
+    ]);
+});
+
 require __DIR__.'/auth.php';
