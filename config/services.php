@@ -36,9 +36,11 @@ return [
     ],
 
     'ai_gateway' => [
-        'base_url' => env('AI_GATEWAY_URL', 'https://api.relink-gateway.biz.id/v1'),
+        'base_url' => env('AI_GATEWAY_URL', 'https://ai.helipod.io/v1'),
+        'url' => env('AI_GATEWAY_URL', 'https://ai.helipod.io/v1'),
         'api_key' => env('AI_API_KEY'),
-        'model' => env('AI_MODEL', 'auto'),
+        'key' => env('AI_API_KEY'),
+        'model' => env('AI_MODEL', 'gpt-6-sol'),
         'timeout' => (int) env('AI_TIMEOUT', 45),
     ],
 

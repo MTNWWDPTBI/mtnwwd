@@ -58,7 +58,7 @@ class SmartAssistantController extends Controller
     }
 
     /**
-     * Memproses pesan dari user ke AI Gateway menggunakan Claude/Anthropic Messages API
+     * Memproses pesan dari user ke AI Gateway menggunakan OpenAI Chat Completions API
      * dengan dukungan Multi-turn Memory, Function Calling, dan Visualisasi Grafik.
      */
     public function chat(Request $request): JsonResponse
@@ -107,26 +107,22 @@ class SmartAssistantController extends Controller
         $tools = $this->getToolsDefinition();
 
         // 1. Panggil AI Gateway (Step 1: Analisis Intensi & Tool Calling)
-        $aiResult = $this->callAnthropicApi($systemInstruction, $messages, $tools);
+        $aiResult = $this->callOpenAiApi($systemInstruction, $messages, $tools);
 
-        $contentBlocks = $aiResult['content'] ?? [];
-        $toolUseBlock = null;
+        $assistantMessage = $aiResult['choices'][0]['message'] ?? [];
+        $toolCalls = $assistantMessage['tool_calls'] ?? [];
+        $firstToolCall = $toolCalls[0] ?? null;
 
-        foreach ($contentBlocks as $block) {
-            if (($block['type'] ?? '') === 'tool_use' && ! empty($block['name']) && $toolUseBlock === null) {
-                $toolUseBlock = $block;
-            }
-        }
-
-        $initialText = $this->extractCleanAiResponse($contentBlocks);
+        $initialText = $this->cleanTextResponse($assistantMessage['content'] ?? '');
         $finalReply = '';
         $extractedSql = null;
         $chartData = null;
 
-        // 2. Deteksi kueri SQL dari blok tool_use
-        if ($toolUseBlock) {
-            $toolName = $toolUseBlock['name'] ?? '';
-            $toolInput = $toolUseBlock['input'] ?? [];
+        // 2. Deteksi kueri SQL dari blok tool_calls (Format OpenAI)
+        if ($firstToolCall) {
+            $toolName = $firstToolCall['function']['name'] ?? '';
+            $rawArgs = $firstToolCall['function']['arguments'] ?? '{}';
+            $toolInput = is_string($rawArgs) ? (json_decode($rawArgs, true) ?? []) : $rawArgs;
 
             if ($toolName === 'query_sap_database') {
                 $extractedSql = trim($toolInput['sql'] ?? '');
@@ -135,7 +131,7 @@ class SmartAssistantController extends Controller
             }
         }
 
-        // 3. Deteksi kueri SQL dari tag [SQL] di respons teks jika tool_use tidak dipakai
+        // 3. Deteksi kueri SQL dari tag [SQL] di respons teks jika tool_calls tidak dipakai
         if (! $extractedSql && preg_match('/\[SQL\](.*?)\[\/SQL\]/is', $initialText, $matches)) {
             $extractedSql = trim($matches[1]);
         }
@@ -153,31 +149,25 @@ class SmartAssistantController extends Controller
                 $finalReply = '⚠️ Kendala Kueri: '.$queryResult['error']."\n\nKueri: `{$extractedSql}`";
             } else {
                 // ========================================================
-                // ARSITEKTUR TWO-STEP CALLING:
-                // Mengirimkan hasil riil database kembali ke AI Gateway via tool_result
-                // agar AI dapat menalar, merangkum angka, dan berkomunikasi
-                // secara natural, hangat, dan solutif seperti manusia.
+                // ARSITEKTUR TWO-STEP CALLING (FORMAT OPENAI):
+                // Mengirimkan hasil riil database kembali ke AI Gateway
                 // ========================================================
                 $step2Messages = $messages;
 
-                if ($toolUseBlock) {
+                if ($firstToolCall) {
                     $step2Messages[] = [
                         'role' => 'assistant',
-                        'content' => $contentBlocks,
+                        'content' => $assistantMessage['content'] ?? null,
+                        'tool_calls' => $toolCalls,
                     ];
                     $step2Messages[] = [
-                        'role' => 'user',
-                        'content' => [
-                            [
-                                'type' => 'tool_result',
-                                'tool_use_id' => $toolUseBlock['id'] ?? 'call_query_sap',
-                                'content' => json_encode([
-                                    'query_executed' => $extractedSql,
-                                    'row_count' => count($queryResult),
-                                    'data' => $queryResult,
-                                ]),
-                            ],
-                        ],
+                        'role' => 'tool',
+                        'tool_call_id' => $firstToolCall['id'] ?? 'call_query_sap',
+                        'content' => json_encode([
+                            'query_executed' => $extractedSql,
+                            'row_count' => count($queryResult),
+                            'data' => $queryResult,
+                        ]),
                     ];
                 } else {
                     $step2Messages[] = [
@@ -199,11 +189,11 @@ Data maintenance dari database SAP sudah didapatkan di atas. Sekarang tugasmu ad
 4. Jika user meminta grafik visual atau data berupa perbandingan/ranking, sertakan blok [CHART]{"chart_type":"bar"|"line"|"pie","title":"...","labels":[...],"dataset_label":"...","data":[...]} [/CHART] di baris paling akhir.
 5. JANGAN memanggil tool lagi. Langsung sampaikan jawaban lengkapmu dalam Bahasa Indonesia.';
 
-                $step2Result = $this->callAnthropicApi($step2Instruction, $step2Messages, []);
+                $step2Result = $this->callOpenAiApi($step2Instruction, $step2Messages, []);
 
-                if (! empty($step2Result['content'])) {
-                    $extractedText = $this->extractCleanAiResponse($step2Result['content']);
-                    // Pastikan respons Step 2 bukan hanya pantulan tag [SQL] mentah
+                $step2Content = $step2Result['choices'][0]['message']['content'] ?? '';
+                if (! empty($step2Content)) {
+                    $extractedText = $this->cleanTextResponse($step2Content);
                     if (! preg_match('/^\s*\[SQL\].*?\[\/SQL\]\s*$/is', $extractedText)) {
                         $finalReply = $extractedText;
                     }
@@ -246,7 +236,6 @@ Data maintenance dari database SAP sudah didapatkan di atas. Sekarang tugasmu ad
      */
     private function inferQueryFromIntent(string $userMessage, $pastChats): ?string
     {
-        // 1. Cari nomor mesin dari pesan saat ini atau dari konteks riwayat obrolan
         $machine = null;
         if (preg_match('/(?:mesin|unit)?\s*(KA-WWD-NDB-[0-9]{4}|NDB-[0-9]{4}|[0-9]{4})/i', $userMessage, $m)) {
             $val = strtoupper($m[1]);
@@ -310,7 +299,6 @@ Data maintenance dari database SAP sudah didapatkan di atas. Sekarang tugasmu ad
         $firstRow = (array) $results[0];
         $keys = array_keys($firstRow);
 
-        // Cek apakah query berupa agregasi (GROUP BY)
         $hasAggregation = false;
         foreach ($keys as $k) {
             if (preg_match('/(total|sum|count|avg|frekuensi|breakdown_count)/i', $k)) {
@@ -484,10 +472,7 @@ Data maintenance dari database SAP sudah didapatkan di atas. Sekarang tugasmu ad
             return ['error' => 'Query SQL kosong.'];
         }
 
-        // Auto-correct pencarian nomor mesin dari functional_location = 'xxx' menjadi LIKE '%xxx%'
         $sql = preg_replace("/functional_location\s*=\s*['\"]([^'\"]+)['\"]/i", "functional_location LIKE '%$1%'", $sql);
-
-        // Auto-correct alias kolom umum yang sering digenerate oleh AI
         $sql = str_ireplace(['equipment_id', 'equipment', 'machine_id', 'mesin_id'], 'functional_location', $sql);
         $sql = str_ireplace(['created_at'], 'date', $sql);
         $sql = str_ireplace(['technician'], 'executor', $sql);
@@ -496,7 +481,6 @@ Data maintenance dari database SAP sudah didapatkan di atas. Sekarang tugasmu ad
             return ['error' => 'Hanya operasi SELECT yang diizinkan untuk keamanan data.'];
         }
 
-        // Cegah statement berbahaya
         $disallowed = ['DROP', 'TRUNCATE', 'DELETE', 'UPDATE', 'INSERT', 'ALTER', 'GRANT', 'REVOKE'];
         foreach ($disallowed as $keyword) {
             if (preg_match('/\b'.$keyword.'\b/i', $sql)) {
@@ -516,56 +500,62 @@ Data maintenance dari database SAP sudah didapatkan di atas. Sekarang tugasmu ad
     }
 
     /**
-     * Definisi tools untuk Anthropic Function Calling.
+     * Definisi tools untuk OpenAI Function Calling.
      */
     private function getToolsDefinition(): array
     {
         return [
             [
-                'name' => 'query_sap_database',
-                'description' => 'Mengeksekusi perintah SQL SELECT pada tabel sap_histories MySQL untuk mencari data historis maintenance pabrik Bekaert. Kolom mesin: functional_location. Kolom tanggal: date. Kolom teknisi: executor. Kolom komponen: object_part. Kolom downtime: bm_hrs.',
-                'input_schema' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'sql' => [
-                            'type' => 'string',
-                            'description' => 'Perintah SELECT SQL valid untuk tabel sap_histories. Pastikan selalu gunakan LIMIT maksimal 50-80.',
+                'type' => 'function',
+                'function' => [
+                    'name' => 'query_sap_database',
+                    'description' => 'Mengeksekusi perintah SQL SELECT pada tabel sap_histories MySQL untuk mencari data historis maintenance pabrik Bekaert. Kolom mesin: functional_location. Kolom tanggal: date. Kolom teknisi: executor. Kolom komponen: object_part. Kolom downtime: bm_hrs.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'sql' => [
+                                'type' => 'string',
+                                'description' => 'Perintah SELECT SQL valid untuk tabel sap_histories. Pastikan selalu gunakan LIMIT maksimal 50-80.',
+                            ],
                         ],
+                        'required' => ['sql'],
                     ],
-                    'required' => ['sql'],
                 ],
             ],
             [
-                'name' => 'render_chart',
-                'description' => 'Menghasilkan konfigurasi grafik visual (Chart.js) untuk memvisualisasikan data maintenance, seperti perbandingan total jam breakdown antar mesin, frekuensi kerusakan komponen, atau tren per bulan.',
-                'input_schema' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'chart_type' => [
-                            'type' => 'string',
-                            'enum' => ['bar', 'line', 'pie', 'doughnut'],
-                            'description' => 'Jenis visualisasi grafik',
+                'type' => 'function',
+                'function' => [
+                    'name' => 'render_chart',
+                    'description' => 'Menghasilkan konfigurasi grafik visual (Chart.js) untuk memvisualisasikan data maintenance, seperti perbandingan total jam breakdown antar mesin, frekuensi kerusakan komponen, atau tren per bulan.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'chart_type' => [
+                                'type' => 'string',
+                                'enum' => ['bar', 'line', 'pie', 'doughnut'],
+                                'description' => 'Jenis visualisasi grafik',
+                            ],
+                            'title' => [
+                                'type' => 'string',
+                                'description' => 'Judul grafik yang informatif',
+                            ],
+                            'labels' => [
+                                'type' => 'array',
+                                'items' => ['type' => 'string'],
+                                'description' => 'Daftar label kategori pada sumbu X atau segmen',
+                            ],
+                            'dataset_label' => [
+                                'type' => 'string',
+                                'description' => 'Nama/keterangan dataset metrik (contoh: Total Jam Breakdown)',
+                            ],
+                            'data' => [
+                                'type' => 'array',
+                                'items' => ['type' => 'number'],
+                                'description' => 'Daftar angka numerik sesuai urutan labels',
+                            ],
                         ],
-                        'title' => [
-                            'type' => 'string',
-                            'description' => 'Judul grafik yang informatif',
-                        ],
-                        'labels' => [
-                            'type' => 'array',
-                            'items' => ['type' => 'string'],
-                            'description' => 'Daftar label kategori pada sumbu X atau segmen',
-                        ],
-                        'dataset_label' => [
-                            'type' => 'string',
-                            'description' => 'Nama/keterangan dataset metrik (contoh: Total Jam Breakdown)',
-                        ],
-                        'data' => [
-                            'type' => 'array',
-                            'items' => ['type' => 'number'],
-                            'description' => 'Daftar angka numerik sesuai urutan labels',
-                        ],
+                        'required' => ['chart_type', 'title', 'labels', 'dataset_label', 'data'],
                     ],
-                    'required' => ['chart_type', 'title', 'labels', 'dataset_label', 'data'],
                 ],
             ],
         ];
@@ -601,55 +591,18 @@ PANDUAN TOOL CALLING & PENCARIAN DATA:
     }
 
     /**
-     * Ekstrak teks bersih user-facing dari content blocks AI,
-     * menghilangkan blok internal monologue/reasoning berbahasa Inggris dari model (seperti DeepSeek).
+     * Bersihkan tag reasoning internal (seperti <think>...</think>) dari respons teks AI.
      */
-    private function extractCleanAiResponse(array $contentBlocks): string
+    private function cleanTextResponse(?string $text): string
     {
-        $textBlocks = [];
-        foreach ($contentBlocks as $block) {
-            if (($block['type'] ?? '') === 'text' && ! empty(trim($block['text'] ?? ''))) {
-                $textBlocks[] = trim($block['text']);
-            }
-        }
-
-        if (empty($textBlocks)) {
+        if (empty($text)) {
             return '';
         }
 
-        // Jika hanya ada 1 blok teks
-        if (count($textBlocks) === 1) {
-            $text = $textBlocks[0];
-            $text = preg_replace('/<think>.*?<\/think>/is', '', $text);
-            $text = preg_replace('/<｜DSML｜.*?<\/｜DSML｜.*?>/is', '', $text);
+        $text = preg_replace('/<think>.*?<\/think>/is', '', $text);
+        $text = preg_replace('/<｜DSML｜.*?<\/｜DSML｜.*?>/is', '', $text);
 
-            return trim($text);
-        }
-
-        // Jika ada beberapa blok teks (misal block 0 adalah internal thinking DeepSeek):
-        // Ambil blok user-facing dari urutan terakhir yang bukan internal reasoning
-        for ($i = count($textBlocks) - 1; $i >= 0; $i--) {
-            $candidate = $textBlocks[$i];
-            if (str_contains($candidate, '<｜DSML｜')) {
-                continue;
-            }
-            if (preg_match('/^(The user|Need to|Let me check|Empty result|Data has duplicates|I should|Provide summary|Let me analyze)[^A-Za-z0-9]/i', $candidate)) {
-                continue;
-            }
-
-            $candidate = preg_replace('/<think>.*?<\/think>/is', '', $candidate);
-            $candidate = preg_replace('/<｜DSML｜.*?<\/｜DSML｜.*?>/is', '', $candidate);
-            $trimmed = trim($candidate);
-            if (! empty($trimmed)) {
-                return $trimmed;
-            }
-        }
-
-        // Fallback ke blok terakhir jika semua terfilter
-        $last = end($textBlocks);
-        $last = preg_replace('/<think>.*?<\/think>/is', '', $last);
-
-        return trim($last);
+        return trim($text);
     }
 
     /**
@@ -710,44 +663,51 @@ PANDUAN TOOL CALLING & PENCARIAN DATA:
     }
 
     /**
-     * Kirim permintaan ke Anthropic / Claude Messages API via Laravel Http Client dengan IPv4 enforce.
+     * Kirim permintaan ke OpenAI-Compatible Chat Completions API via Laravel Http Client dengan IPv4 enforce.
      */
-    private function callAnthropicApi(string $systemInstruction, array $messages, array $tools = []): array
+    private function callOpenAiApi(string $systemInstruction, array $messages, array $tools = []): array
     {
-        $baseUrl = config('services.ai_gateway.base_url', 'https://api.relink-gateway.biz.id/v1');
-        $apiKey = config('services.ai_gateway.api_key');
-        $model = config('services.ai_gateway.model', 'auto');
-        $timeout = (int) config('services.ai_gateway.timeout', 45);
+        $baseUrl = config('services.ai_gateway.base_url') ?: config('services.ai_gateway.url') ?: env('AI_GATEWAY_URL', 'https://ai.helipod.io/v1');
+        $apiKey  = config('services.ai_gateway.api_key') ?: config('services.ai_gateway.key') ?: env('AI_API_KEY');
+        $model   = config('services.ai_gateway.model') ?: env('AI_MODEL', 'gpt-6-sol');
+        $timeout = (int) (config('services.ai_gateway.timeout') ?: env('AI_TIMEOUT', 45));
 
         if (empty($apiKey)) {
             return ['error' => 'API Key AI belum dikonfigurasi di file .env.'];
         }
 
-        // Normalisasi endpoint ke /v1/messages
+        // Normalisasi endpoint ke /v1/chat/completions
         $cleanBase = rtrim($baseUrl, '/');
         if (! str_ends_with($cleanBase, '/v1')) {
             $cleanBase .= '/v1';
         }
-        $endpoint = $cleanBase.'/messages';
+        $endpoint = $cleanBase.'/chat/completions';
+
+        // Format OpenAI memasukkan system prompt sebagai elemen pertama di array messages
+        $fullMessages = array_merge([
+            [
+                'role' => 'system',
+                'content' => $systemInstruction,
+            ],
+        ], $messages);
 
         $payload = [
             'model' => $model,
             'max_tokens' => 2048,
-            'system' => $systemInstruction,
-            'messages' => $messages,
+            'messages' => $fullMessages,
         ];
 
         if (! empty($tools)) {
             $payload['tools'] = $tools;
+            $payload['tool_choice'] = 'auto';
         }
 
         try {
             $response = Http::withHeaders([
-                'x-api-key' => $apiKey,
-                'anthropic-version' => '2023-06-01',
+                'Authorization' => 'Bearer '.$apiKey,
                 'Content-Type' => 'application/json',
             ])->withOptions([
-                'force_ip_resolve' => 'v4', // Mencegah timeout IPv6 di Windows/Laragon
+                'force_ip_resolve' => 'v4',
                 'verify' => false,
             ])->timeout($timeout)->post($endpoint, $payload);
 

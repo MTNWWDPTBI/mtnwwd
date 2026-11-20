@@ -418,13 +418,64 @@ class PicReportController extends Controller
     }
 
     /**
-     * Panggil AI (Gemini Flash Lite / AI Gateway) dengan fallback statistik cerdas.
+     * Panggil AI Gateway (gpt-6-sol OpenAI Chat Completions API) dengan fallback Gemini dan statistik cerdas.
      *
      * @param  array<string, mixed>  $fallbackData
      */
     private function callAiGateway(string $prompt, array $fallbackData = []): string
     {
-        // 1. Prioritas 1: Gunakan Gemini API (gemini-flash-lite-latest)
+        // 1. Prioritas 1: Gunakan AI Gateway (gpt-6-sol / OpenAI Chat Completions API)
+        $baseUrl = config('services.ai_gateway.base_url') ?: config('services.ai_gateway.url') ?: env('AI_GATEWAY_URL', 'https://ai.helipod.io/v1');
+        $apiKey = config('services.ai_gateway.api_key') ?: config('services.ai_gateway.key') ?: env('AI_API_KEY');
+        $model = config('services.ai_gateway.model') ?: env('AI_MODEL', 'gpt-6-sol');
+        $timeout = (int) (config('services.ai_gateway.timeout') ?: env('AI_TIMEOUT', 30));
+
+        if (! empty($apiKey)) {
+            $cleanBase = rtrim($baseUrl, '/');
+            if (! str_ends_with($cleanBase, '/v1')) {
+                $cleanBase .= '/v1';
+            }
+            $endpoint = $cleanBase.'/chat/completions';
+
+            try {
+                $response = Http::withHeaders([
+                    'Authorization' => 'Bearer '.$apiKey,
+                    'Content-Type' => 'application/json',
+                ])->withOptions([
+                    'force_ip_resolve' => 'v4',
+                    'verify' => false,
+                ])->timeout($timeout)->post($endpoint, [
+                    'model' => $model,
+                    'max_tokens' => 1500,
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => 'Kamu adalah Senior Maintenance Engineer di PT Bekaert Indonesia yang ahli dalam menyusun rangkuman PPT problem solving mesin pabrik. Kamu WAJIB selalu menyebutkan kode mesin spesifik (functional_location) di setiap poin analisis dan rekomendasi.',
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => $prompt,
+                        ],
+                    ],
+                ]);
+
+                if ($response->successful()) {
+                    $aiText = $response->json('choices.0.message.content');
+                    if (! empty(trim((string) $aiText))) {
+                        $cleanText = preg_replace('/<think>.*?<\/think>/is', '', $aiText);
+                        $cleanText = preg_replace('/<｜DSML｜.*?<\/｜DSML｜.*?>/is', '', $cleanText);
+
+                        return trim($cleanText);
+                    }
+                } else {
+                    Log::warning('PicReport AI Gateway response error', ['status' => $response->status(), 'body' => $response->body()]);
+                }
+            } catch (\Throwable $e) {
+                Log::info('PicReport AI Gateway call failed/timeout: '.$e->getMessage());
+            }
+        }
+
+        // 2. Prioritas 2: Fallback ke Gemini API jika tersedia
         $geminiKey = env('GEMINI_API_KEY') ?: config('services.gemini.key');
         if (! empty($geminiKey)) {
             try {
@@ -453,61 +504,6 @@ class PicReportController extends Controller
                 }
             } catch (\Throwable $e) {
                 Log::info('PicReport Gemini API attempt failed/timeout: '.$e->getMessage());
-            }
-        }
-
-        // 2. Prioritas 2: Gunakan AI Gateway Relink / Anthropic Messages API
-        $baseUrl = config('services.ai_gateway.base_url', 'https://api.relink-gateway.biz.id/v1');
-        $apiKey = config('services.ai_gateway.api_key');
-        $model = config('services.ai_gateway.model', 'auto');
-        $timeout = (int) config('services.ai_gateway.timeout', 15);
-
-        if (! empty($apiKey)) {
-            $cleanBase = rtrim($baseUrl, '/');
-            if (! str_ends_with($cleanBase, '/v1')) {
-                $cleanBase .= '/v1';
-            }
-            $endpoint = $cleanBase.'/messages';
-
-            try {
-                $response = Http::withHeaders([
-                    'x-api-key' => $apiKey,
-                    'anthropic-version' => '2023-06-01',
-                    'Content-Type' => 'application/json',
-                ])->withOptions([
-                    'force_ip_resolve' => 'v4',
-                    'verify' => false,
-                ])->timeout($timeout)->post($endpoint, [
-                    'model' => $model,
-                    'max_tokens' => 1500,
-                    'system' => 'Kamu adalah Senior Maintenance Engineer di PT Bekaert Indonesia yang ahli dalam menyusun rangkuman PPT problem solving mesin pabrik. Kamu WAJIB selalu menyebutkan kode mesin spesifik (functional_location) di setiap poin analisis dan rekomendasi.',
-                    'messages' => [
-                        [
-                            'role' => 'user',
-                            'content' => $prompt,
-                        ],
-                    ],
-                ]);
-
-                if ($response->successful()) {
-                    $contentBlocks = $response->json('content') ?? [];
-                    $textParts = [];
-
-                    foreach ($contentBlocks as $block) {
-                        if (($block['type'] ?? '') === 'text' && ! empty($block['text'])) {
-                            $cleanText = preg_replace('/<think>.*?<\/think>/is', '', $block['text']);
-                            $cleanText = preg_replace('/<｜DSML｜.*?<\/｜DSML｜.*?>/is', '', $cleanText);
-                            $textParts[] = trim($cleanText);
-                        }
-                    }
-
-                    $combined = implode("\n\n", array_filter($textParts));
-                    if (! empty($combined)) {
-                        return $combined;
-                    }
-                }
-            } catch (\Throwable $e) {
-                Log::info('PicReport AI Gateway call failed/timeout: '.$e->getMessage());
             }
         }
 
