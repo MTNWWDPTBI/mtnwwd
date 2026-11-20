@@ -5,6 +5,7 @@ namespace App\Imports;
 use App\Models\PicMachine;
 use App\Models\SapHistory;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
 use Maatwebsite\Excel\Concerns\ToModel;
@@ -13,14 +14,17 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 class PicMachineImport implements ToModel, WithHeadingRow
 {
     public int $importedCount = 0;
+
     public int $updatedCount = 0;
+
     public int $skippedCount = 0;
+
     public array $skippedDetails = [];
 
     /**
      * Cache user list in memory to prevent repeated queries during Excel import
      *
-     * @var \Illuminate\Database\Eloquent\Collection|null
+     * @var Collection|null
      */
     protected $allUsers = null;
 
@@ -45,12 +49,14 @@ class PicMachineImport implements ToModel, WithHeadingRow
             $this->skippedCount++;
             $rawUser = $this->extractRawUserString($row);
             $this->skippedDetails[] = "Teknisi '{$rawUser}' tidak ditemukan di database pengguna.";
+
             return null;
         }
 
         if (empty($functionalLocation)) {
             $this->skippedCount++;
             $this->skippedDetails[] = "Baris untuk teknisi '{$user->name}' tidak memiliki kode mesin/functional location.";
+
             return null;
         }
 
@@ -170,6 +176,7 @@ class PicMachineImport implements ToModel, WithHeadingRow
                             return true;
                         }
                     }
+
                     return false;
                 });
                 if ($user) {

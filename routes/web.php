@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminSparepartController;
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AssemblyController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\HandoverController;
@@ -61,6 +62,9 @@ Route::middleware('auth')->group(function () {
     // Rute khusus untuk teknisi update detail checklist JSON
     Route::put('wwd-projects/details/{id}', [WwdProjectController::class, 'updateDetail'])
         ->name('wwd-projects.details.update');
+
+    // Reliability & Breakdown Analytics
+    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
 
     // Rute Smart Assistant
     Route::get('/smart-assistant', [SmartAssistantController::class, 'index'])->name('assistant.index');

@@ -397,6 +397,8 @@ Data maintenance dari database SAP sudah didapatkan di atas. Sekarang tugasmu ad
         $totalActual = 0;
         $partsCount = [];
         $ordersCount = [];
+        $countedOrdersBm = [];
+        $countedOrdersPart = [];
         $tableRows = [];
         $chartLabels = [];
         $chartData = [];
@@ -405,15 +407,33 @@ Data maintenance dari database SAP sudah didapatkan di atas. Sekarang tugasmu ad
             $r = (array) $row;
             $bm = (float) ($r['bm_hrs'] ?? 0);
             $act = (float) ($r['actual_hrs'] ?? 0);
-            $totalBm += $bm;
+            $order = $r['maint_order'] ?? '-';
+            $notfis = $r['notfis'] ?? null;
+
+            // Hindari double-count jam breakdown (bm_hrs) untuk nomor Work Order yang sama
+            if ($order !== '-' && isset($countedOrdersBm[$order])) {
+                // Jangan jumlahkan bm_hrs lagi jika sudah dihitung untuk order ini
+            } else {
+                if ($notfis === 1 || $notfis === '1' || $notfis === null) {
+                    $totalBm += $bm;
+                    if ($order !== '-') {
+                        $countedOrdersBm[$order] = true;
+                    }
+                }
+            }
             $totalActual += $act;
 
             $part = $r['object_part'] ?? '-';
             if ($part && $part !== '-') {
-                $partsCount[$part] = ($partsCount[$part] ?? 0) + 1;
+                $orderPartKey = "{$order}___{$part}";
+                if ($order === '-' || ! isset($countedOrdersPart[$orderPartKey])) {
+                    $partsCount[$part] = ($partsCount[$part] ?? 0) + 1;
+                    if ($order !== '-') {
+                        $countedOrdersPart[$orderPartKey] = true;
+                    }
+                }
             }
 
-            $order = $r['maint_order'] ?? '-';
             if ($order !== '-') {
                 $ordersCount[$order] = true;
             }
@@ -580,6 +600,14 @@ KOLOM LENGKAP:
 - Pabrik: `plant` ('KA'), `area` ('WWD'), `dept` ('NDB'), `type`, `cat`
 - Metrik Numerik: `bm_hrs` (jam breakdown/downtime mesin mati), `actual_hrs` (durasi kerja teknisi), `response_hrs` (waktu respon), `notfis` (frekuensi/jumlah kejadian)
 
+ATURAN STRUKTUR SAP & PENGHITUNGAN DATA:
+1. Dalam tabel `sap_histories`, 1 nomor Work Order (`maint_order`) dapat memiliki 2 atau lebih baris (karena adanya baris konfirmasi kerja teknisi). Hanya 1 baris utama per WO yang memiliki nilai `notfis = 1` (memuat `bm_hrs` dan `response_hrs`), sedangkan baris konfirmasi memiliki `notfis IS NULL` (memuat `actual_hrs` dan `confirmation_text`).
+2. WAJIB: Saat membuat query SQL untuk menghitung jumlah order/frekuensi kerusakan mesin/komponen atau total jam breakdown (`bm_hrs`), kamu WAJIB menggunakan `COUNT(DISTINCT maint_order)` dan menyertakan filter `WHERE notfis = 1` agar tidak terjadi perhitungan ganda (double-counting).
+   Contoh:
+   - Total breakdown per mesin: `SELECT functional_location, COUNT(DISTINCT maint_order) as total_wo, ROUND(SUM(bm_hrs), 2) as total_downtime FROM sap_histories WHERE notfis = 1 GROUP BY functional_location ORDER BY total_downtime DESC LIMIT 10;`
+   - Komponen sering rusak: `SELECT object_part, COUNT(DISTINCT maint_order) as frekuensi, ROUND(SUM(bm_hrs), 2) as total_downtime FROM sap_histories WHERE notfis = 1 AND object_part IS NOT NULL AND object_part != '' GROUP BY object_part ORDER BY frekuensi DESC LIMIT 10;`
+3. Khusus untuk total jam kerja teknisi (`actual_hrs`), jumlahkan dari seluruh baris tanpa filter `notfis = 1` (`SUM(actual_hrs)`), karena jam kerja teknisi tercatat di baris konfirmasi teknisi.
+
 PANDUAN TOOL CALLING & PENCARIAN DATA:
 1. Jika pertanyaan membutuhkan data historis maintenance, panggil tool `query_sap_database` ATAU sertakan perintah SQL SELECT di dalam tag [SQL] dan [/SQL].
    PENTING:
@@ -668,8 +696,8 @@ PANDUAN TOOL CALLING & PENCARIAN DATA:
     private function callOpenAiApi(string $systemInstruction, array $messages, array $tools = []): array
     {
         $baseUrl = config('services.ai_gateway.base_url') ?: config('services.ai_gateway.url') ?: env('AI_GATEWAY_URL', 'https://ai.helipod.io/v1');
-        $apiKey  = config('services.ai_gateway.api_key') ?: config('services.ai_gateway.key') ?: env('AI_API_KEY');
-        $model   = config('services.ai_gateway.model') ?: env('AI_MODEL', 'gpt-6-sol');
+        $apiKey = config('services.ai_gateway.api_key') ?: config('services.ai_gateway.key') ?: env('AI_API_KEY');
+        $model = config('services.ai_gateway.model') ?: env('AI_MODEL', 'gpt-6-sol');
         $timeout = (int) (config('services.ai_gateway.timeout') ?: env('AI_TIMEOUT', 45));
 
         if (empty($apiKey)) {

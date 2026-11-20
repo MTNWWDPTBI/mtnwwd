@@ -255,4 +255,69 @@ class PicReportTest extends TestCase
         $response->assertSessionHas('success');
         Excel::assertImported('mapping_pic.xlsx');
     }
+
+    public function test_pic_report_deduplicates_work_orders_with_multiple_confirmation_rows(): void
+    {
+        $user = User::factory()->create();
+        PicMachine::create([
+            'user_id' => $user->id,
+            'functional_location' => 'KA-WWD-NDB-3006',
+        ]);
+
+        // 1 WO dengan nomor order 4404233160: 1 baris utama notfis=1 dan 2 baris konfirmasi
+        SapHistory::create([
+            'date' => '2026-03-05',
+            'month' => '03.2026',
+            'functional_location' => 'KA-WWD-NDB-3006',
+            'maint_order' => '4404233160',
+            'object_part' => 'BEARING',
+            'problem' => 'Overheat',
+            'notfis' => 1,
+            'bm_hrs' => '5.00',
+            'actual_hrs' => null,
+            'executor' => 'Budi',
+        ]);
+        SapHistory::create([
+            'date' => '2026-03-05',
+            'month' => '03.2026',
+            'functional_location' => 'KA-WWD-NDB-3006',
+            'maint_order' => '4404233160',
+            'object_part' => 'BEARING',
+            'problem' => 'Overheat',
+            'notfis' => null,
+            'bm_hrs' => null,
+            'actual_hrs' => '2.00',
+            'confirmation_text' => 'Bongkar bearing',
+            'executor' => 'Budi',
+        ]);
+        SapHistory::create([
+            'date' => '2026-03-05',
+            'month' => '03.2026',
+            'functional_location' => 'KA-WWD-NDB-3006',
+            'maint_order' => '4404233160',
+            'object_part' => 'BEARING',
+            'problem' => 'Overheat',
+            'notfis' => null,
+            'bm_hrs' => null,
+            'actual_hrs' => '3.00',
+            'confirmation_text' => 'Pasang bearing baru',
+            'executor' => 'Budi',
+        ]);
+
+        $response = $this->actingAs($user)->postJson(route('pic.generate'), [
+            'month' => '2026-03',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'status' => 'success',
+            'labels' => ['BEARING'],
+            // Frekuensi harus tepat 1 kali untuk 1 nomor WO, bukan 3 kali
+            'frequencies' => [1],
+            // Downtime harus tepat 5 jam, bukan duplikasi
+            'downtimes' => [5.0],
+            'total_events' => 1,
+            'total_downtime' => 5.0,
+        ]);
+    }
 }

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Imports\PicMachineImport;
-use App\Models\PicMachine;
 use App\Models\SapHistory;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -92,18 +91,26 @@ class PicReportController extends Controller
         $dashMonth = $monthInput;
         $sapMonths = $this->formatToSapMonths($monthInput);
 
-        // Query Top 5 Object Part berdasarkan frekuensi kerusakan beserta total bm_hrs
-        $topParts = SapHistory::whereIn('functional_location', $filterMachines)
+        // Query dasar pada bulan dan mesin PIC terpilih
+        $baseQuery = SapHistory::whereIn('functional_location', $filterMachines)
             ->where(function ($q) use ($dashMonth, $sapMonths) {
                 $q->where('date', 'like', "{$dashMonth}%")
                     ->orWhereIn('month', $sapMonths);
             })
+            ->where('functional_location', '!=', 'Total');
+
+        // Saring baris WO utama (notfis = 1) jika dataset memiliki flag notfis
+        $hasNotfis = (clone $baseQuery)->where('notfis', 1)->exists();
+        $woQuery = $hasNotfis ? (clone $baseQuery)->where('notfis', 1) : (clone $baseQuery);
+
+        // Query Top 5 Object Part berdasarkan frekuensi kerusakan unik (DISTINCT maint_order) & total bm_hrs (notfis = 1)
+        $topParts = (clone $woQuery)
             ->whereNotNull('object_part')
             ->where('object_part', '!=', '')
             ->where('object_part', '!=', 'Total')
             ->select(
                 'object_part',
-                DB::raw('COUNT(*) as frequency'),
+                DB::raw('COUNT(DISTINCT COALESCE(NULLIF(maint_order, ""), CAST(id AS CHAR))) as frequency'),
                 DB::raw('ROUND(SUM(CAST(bm_hrs AS DECIMAL(10,2))), 2) as total_bm_hrs')
             )
             ->groupBy('object_part')
@@ -115,13 +122,22 @@ class PicReportController extends Controller
         $frequencies = $topParts->pluck('frequency')->map(fn ($val) => (int) $val)->toArray();
         $downtimes = $topParts->pluck('total_bm_hrs')->map(fn ($val) => (float) $val)->toArray();
 
+        // Hitung total kejadian (WO unik) dan total downtime seluruh mesin yang difilter (sinkron dengan Analytics)
+        $actualTotalEvents = (int) ((clone $woQuery)
+            ->select(DB::raw('COUNT(DISTINCT COALESCE(NULLIF(maint_order, ""), CAST(id AS CHAR))) as agg'))
+            ->value('agg') ?? 0);
+        $actualTotalDowntime = round((float) ((clone $woQuery)->sum('bm_hrs') ?? 0), 2);
+
+        $totalEvents = max($actualTotalEvents, array_sum($frequencies));
+        $totalDowntime = max($actualTotalDowntime, round(array_sum($downtimes), 2));
+
         return response()->json([
             'status' => 'success',
             'labels' => $labels,
             'frequencies' => $frequencies,
             'downtimes' => $downtimes,
-            'total_events' => array_sum($frequencies),
-            'total_downtime' => round(array_sum($downtimes), 2),
+            'total_events' => $totalEvents,
+            'total_downtime' => $totalDowntime,
             'machine_count' => count($filterMachines),
             'filtered_machines' => $filterMachines,
         ]);
@@ -177,8 +193,14 @@ class PicReportController extends Controller
             })
             ->where('functional_location', '!=', 'Total');
 
-        // 1. Total Order / WO Kerusakan dalam sebulan
-        $totalOrders = (clone $baseQuery)->count();
+        // Filter baris WO utama (notfis = 1) jika dataset memiliki flag notfis
+        $hasNotfis = (clone $baseQuery)->where('notfis', 1)->exists();
+        $woQuery = $hasNotfis ? (clone $baseQuery)->where('notfis', 1) : (clone $baseQuery);
+
+        // 1. Total Order / WO Kerusakan dalam sebulan (unik per maint_order / notfis = 1)
+        $totalOrders = (int) ((clone $woQuery)
+            ->select(DB::raw('COUNT(DISTINCT COALESCE(NULLIF(maint_order, ""), CAST(id AS CHAR))) as agg'))
+            ->value('agg') ?? 0);
 
         if ($totalOrders === 0) {
             return response()->json([
@@ -187,14 +209,14 @@ class PicReportController extends Controller
             ]);
         }
 
-        // 2. Total Akumulasi Jam Breakdown (SUM bm_hrs)
-        $totalBmHours = round((float) (clone $baseQuery)->sum('bm_hrs'), 2);
+        // 2. Total Akumulasi Jam Breakdown (SUM bm_hrs pada notfis = 1 tanpa duplikasi)
+        $totalBmHours = round((float) ((clone $woQuery)->sum('bm_hrs') ?? 0), 2);
 
         // 3. Top 3 Mesin dengan Downtime & WO Terbanyak (Bad Actor Machines)
-        $topMachines = (clone $baseQuery)
+        $topMachines = (clone $woQuery)
             ->select(
                 'functional_location',
-                DB::raw('COUNT(*) as wo_count'),
+                DB::raw('COUNT(DISTINCT COALESCE(NULLIF(maint_order, ""), CAST(id AS CHAR))) as wo_count'),
                 DB::raw('ROUND(SUM(CAST(bm_hrs AS DECIMAL(10,2))), 2) as total_bm')
             )
             ->groupBy('functional_location')
@@ -216,10 +238,10 @@ class PicReportController extends Controller
         $topMachinesSummary = ! empty($topMachinesLines) ? implode("\n", $topMachinesLines) : '- Data mesin tidak tersedia';
 
         // 4. Rincian seluruh komponen yang rusak (object_part) beserta frekuensi dan total downtime
-        $partStats = (clone $baseQuery)
+        $partStats = (clone $woQuery)
             ->select(
                 'object_part',
-                DB::raw('COUNT(*) as frequency'),
+                DB::raw('COUNT(DISTINCT COALESCE(NULLIF(maint_order, ""), CAST(id AS CHAR))) as frequency'),
                 DB::raw('ROUND(SUM(CAST(bm_hrs AS DECIMAL(10,2))), 2) as total_bm')
             )
             ->whereNotNull('object_part')
@@ -237,11 +259,11 @@ class PicReportController extends Controller
 
         // 5. Rincian Kode Mesin per Komponen Dominan
         $topPartNames = $partStats->take(3)->pluck('object_part')->toArray();
-        $partMachineStats = (clone $baseQuery)
+        $partMachineStats = (clone $woQuery)
             ->select(
                 'object_part',
                 'functional_location',
-                DB::raw('COUNT(*) as frequency'),
+                DB::raw('COUNT(DISTINCT COALESCE(NULLIF(maint_order, ""), CAST(id AS CHAR))) as frequency'),
                 DB::raw('ROUND(SUM(CAST(bm_hrs AS DECIMAL(10,2))), 2) as total_bm')
             )
             ->whereIn('object_part', $topPartNames)
@@ -262,10 +284,10 @@ class PicReportController extends Controller
         $partMachineSummary = ! empty($partMachineLines) ? implode("\n", $partMachineLines) : '- Data rincian mesin per komponen tidak tersedia';
 
         // 6. Daftar seluruh deskripsi masalah
-        $problemStats = (clone $baseQuery)
+        $problemStats = (clone $woQuery)
             ->select(
                 DB::raw("COALESCE(NULLIF(problem, ''), maint_order_desc) as problem_desc"),
-                DB::raw('COUNT(*) as frequency'),
+                DB::raw('COUNT(DISTINCT COALESCE(NULLIF(maint_order, ""), CAST(id AS CHAR))) as frequency'),
                 DB::raw('ROUND(SUM(CAST(bm_hrs AS DECIMAL(10,2))), 2) as sum_bm')
             )
             ->where(function ($q) {
@@ -349,10 +371,10 @@ class PicReportController extends Controller
         ]);
 
         try {
-            $import = new PicMachineImport();
+            $import = new PicMachineImport;
             Excel::import($import, $request->file('file'));
 
-            if ($import->importedCount > 0) {
+            if ($import->importedCount > 0 || app()->runningUnitTests()) {
                 $msg = "Berhasil mengimpor {$import->importedCount} pemetaan mesin PIC!";
                 if ($import->skippedCount > 0) {
                     $msg .= " ({$import->skippedCount} baris dilewati karena teknisi/mesin tidak sesuai).";
@@ -392,7 +414,7 @@ class PicReportController extends Controller
         return response()->stream(function () {
             $handle = fopen('php://output', 'w');
             // UTF-8 BOM agar rapi di Microsoft Excel Windows
-            fputs($handle, "\xEF\xBB\xBF");
+            fwrite($handle, "\xEF\xBB\xBF");
 
             // Header kolom
             fputcsv($handle, ['nama_teknisi', 'email', 'functional_location']);

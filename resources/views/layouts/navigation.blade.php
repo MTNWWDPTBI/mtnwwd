@@ -87,23 +87,74 @@
                 <span>Project WWD</span>
             </a>
 
-            <!-- 6. Smart Assistant (Menu Baru) -->
-            <a href="{{ route('assistant.index') }}" 
-               class="flex items-center gap-3 px-4 py-3 mt-2 text-sm font-bold rounded-xl transition duration-200 {{ request()->routeIs('assistant.*') ? 'bg-gradient-to-r from-[#242E49] to-[#181A2F] text-[#FDA481] border-l-4 border-[#FDA481] shadow-lg' : 'text-slate-200 bg-[#242E49]/40 hover:bg-[#242E49]/80 hover:text-white border border-[#37415C]/50' }}">
-                <svg class="w-5 h-5 {{ request()->routeIs('assistant.*') ? 'text-[#FDA481]' : 'text-[#FDA481]/70' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                </svg>
-                <span class="tracking-wide">AI Smart Assistant</span>
-            </a>
+            @php
+                $isAnalyticsActive = request()->routeIs('analytics.*') || request()->is('analytics*');
+                $isAssistantActive = request()->routeIs('assistant.*') || request()->is('smart-assistant*');
+                $isPicActive = request()->routeIs('pic.*') || request()->is('pic-report*');
+                $isAnyAnalyticsActive = $isAnalyticsActive || $isAssistantActive || $isPicActive;
+            @endphp
 
-            <!-- 7. Dashboard Laporan PIC Mesin -->
-            <a href="{{ route('pic.index') }}" 
-               class="flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-xl transition duration-200 {{ request()->routeIs('pic.*') ? 'bg-[#242E49] text-[#00a884] border-l-4 border-[#00a884] shadow-sm' : 'text-slate-300 hover:bg-[#242E49]/60 hover:text-white' }}">
-                <svg class="w-5 h-5 {{ request()->routeIs('pic.*') ? 'text-[#00a884]' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                </svg>
-                <span>Laporan PIC Mesin</span>
-            </a>
+            <!-- 6. Analytics Split-Action Dropdown Menu -->
+            <div x-data="{ open: {{ $isAnyAnalyticsActive ? 'true' : 'false' }} }" class="space-y-1">
+                <!-- Baris Menu Induk (Split Action: Link Kiri + Toggle Button Kanan) -->
+                <div class="flex items-center justify-between rounded-xl transition duration-200 {{ $isAnyAnalyticsActive ? 'bg-[#242E49] text-[#FDA481]' : 'text-slate-300 hover:bg-[#242E49]/60 hover:text-white' }} {{ $isAnalyticsActive ? 'border-l-4 border-[#B4182D] shadow-sm' : '' }}">
+                    
+                    <!-- Area Kiri: Link Langsung ke Halaman Analytics -->
+                    <a href="{{ route('analytics.index') }}" 
+                       class="flex items-center gap-3 px-4 py-3 flex-1 min-w-0 text-sm font-semibold rounded-l-xl focus:outline-none">
+                        <svg class="w-5 h-5 shrink-0 {{ $isAnyAnalyticsActive ? 'text-[#FDA481]' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <span class="truncate">Analytics</span>
+                    </a>
+
+                    <!-- Area Kanan: Tombol Toggle Expand / Collapse Sub-Menu -->
+                    <button type="button" 
+                            @click="open = !open" 
+                            :aria-expanded="open"
+                            title="Buka / Tutup Sub-Menu Analytics"
+                            class="px-3 py-3 rounded-r-xl hover:bg-black/20 text-slate-400 hover:text-white transition duration-200 focus:outline-none">
+                        <svg class="w-4 h-4 transform transition-transform duration-200" 
+                             :class="open ? 'rotate-180 text-[#FDA481]' : 'rotate-0 text-slate-400'" 
+                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Wadah Sub-Menu (AI Smart Assistant & Laporan PIC Mesin) -->
+                <div x-show="open" 
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 -translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 translate-y-0"
+                     x-transition:leave-end="opacity-0 -translate-y-1"
+                     x-cloak 
+                     class="pl-4 pr-1 py-1 space-y-1 relative">
+                    
+                    <!-- Garis Penanda Hierarki (Indikator Vertikal) -->
+                    <div class="absolute left-6 top-1 bottom-1 w-px bg-[#37415C]/60"></div>
+
+                    <!-- Sub-Menu 1: AI Smart Assistant -->
+                    <a href="{{ route('assistant.index') }}" 
+                       class="flex items-center gap-2.5 pl-5 pr-3 py-2 text-xs font-semibold rounded-xl transition duration-200 relative {{ $isAssistantActive ? 'bg-[#242E49] text-[#FDA481] border-l-2 border-[#FDA481] font-bold shadow-sm' : 'text-slate-400 hover:text-white hover:bg-[#242E49]/40' }}">
+                        <svg class="w-3.5 h-3.5 shrink-0 {{ $isAssistantActive ? 'text-[#FDA481]' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                        <span class="truncate">AI Smart Assistant</span>
+                    </a>
+
+                    <!-- Sub-Menu 2: Laporan PIC Mesin -->
+                    <a href="{{ route('pic.index') }}" 
+                       class="flex items-center gap-2.5 pl-5 pr-3 py-2 text-xs font-semibold rounded-xl transition duration-200 relative {{ $isPicActive ? 'bg-[#242E49] text-[#00a884] border-l-2 border-[#00a884] font-bold shadow-sm' : 'text-slate-400 hover:text-white hover:bg-[#242E49]/40' }}">
+                        <svg class="w-3.5 h-3.5 shrink-0 {{ $isPicActive ? 'text-[#00a884]' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <span class="truncate">Laporan PIC Mesin</span>
+                    </a>
+                </div>
+            </div>
 
             <!-- Group: Master Data & Admin -->
             <div class="pt-6 px-3 pb-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">

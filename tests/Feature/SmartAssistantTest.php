@@ -35,14 +35,13 @@ class SmartAssistantTest extends TestCase
         $user = User::factory()->create();
 
         Http::fake([
-            'https://api.relink-gateway.biz.id/v1/messages' => Http::response([
-                'id' => 'msg_test_1',
-                'type' => 'message',
-                'role' => 'assistant',
-                'content' => [
+            '*' => Http::response([
+                'choices' => [
                     [
-                        'type' => 'text',
-                        'text' => 'Halo! Ada yang bisa saya bantu terkait mesin hari ini?',
+                        'message' => [
+                            'role' => 'assistant',
+                            'content' => 'Halo! Ada yang bisa saya bantu terkait mesin hari ini?',
+                        ],
                     ],
                 ],
             ], 200),
@@ -82,18 +81,23 @@ class SmartAssistantTest extends TestCase
         ]);
 
         Http::fake([
-            'https://api.relink-gateway.biz.id/v1/messages' => Http::response([
-                'id' => 'msg_tool_call',
-                'type' => 'message',
-                'role' => 'assistant',
-                'stop_reason' => 'tool_use',
-                'content' => [
+            '*' => Http::response([
+                'choices' => [
                     [
-                        'type' => 'tool_use',
-                        'id' => 'tool_123',
-                        'name' => 'query_sap_database',
-                        'input' => [
-                            'sql' => "SELECT date, functional_location, maint_order_desc, bm_hrs FROM sap_histories WHERE functional_location LIKE '%NDB-3006%'",
+                        'message' => [
+                            'role' => 'assistant',
+                            'tool_calls' => [
+                                [
+                                    'id' => 'call_123',
+                                    'type' => 'function',
+                                    'function' => [
+                                        'name' => 'query_sap_database',
+                                        'arguments' => json_encode([
+                                            'sql' => "SELECT date, functional_location, maint_order_desc, bm_hrs FROM sap_histories WHERE functional_location LIKE '%NDB-3006%'",
+                                        ]),
+                                    ],
+                                ],
+                            ],
                         ],
                     ],
                 ],
@@ -128,14 +132,13 @@ class SmartAssistantTest extends TestCase
         ]);
 
         Http::fake([
-            'https://api.relink-gateway.biz.id/v1/messages' => Http::response([
-                'id' => 'msg_sql_tag',
-                'type' => 'message',
-                'role' => 'assistant',
-                'content' => [
+            '*' => Http::response([
+                'choices' => [
                     [
-                        'type' => 'text',
-                        'text' => "[SQL]SELECT date, functional_location, maint_order_desc, bm_hrs FROM sap_histories WHERE month = '01.2026'[/SQL]",
+                        'message' => [
+                            'role' => 'assistant',
+                            'content' => "[SQL]SELECT date, functional_location, maint_order_desc, bm_hrs FROM sap_histories WHERE month = '01.2026'[/SQL]",
+                        ],
                     ],
                 ],
             ], 200),
@@ -221,38 +224,37 @@ class SmartAssistantTest extends TestCase
 
         // Simulasikan Two-Step Calling menggunakan Http::fakeSequence
         Http::fake([
-            'https://api.relink-gateway.biz.id/v1/messages' => Http::sequence()
+            '*' => Http::sequence()
                 // Step 1: AI memutuskan memanggil tool query_sap_database
                 ->push([
-                    'id' => 'msg_step1',
-                    'type' => 'message',
-                    'role' => 'assistant',
-                    'stop_reason' => 'tool_use',
-                    'content' => [
+                    'choices' => [
                         [
-                            'type' => 'tool_use',
-                            'id' => 'call_tool_ndb3006',
-                            'name' => 'query_sap_database',
-                            'input' => [
-                                'sql' => "SELECT date, functional_location, maint_order_desc, object_part, bm_hrs FROM sap_histories WHERE functional_location LIKE '%3006%'",
+                            'message' => [
+                                'role' => 'assistant',
+                                'tool_calls' => [
+                                    [
+                                        'id' => 'call_tool_ndb3006',
+                                        'type' => 'function',
+                                        'function' => [
+                                            'name' => 'query_sap_database',
+                                            'arguments' => json_encode([
+                                                'sql' => "SELECT date, functional_location, maint_order_desc, object_part, bm_hrs FROM sap_histories WHERE functional_location LIKE '%3006%'",
+                                            ]),
+                                        ],
+                                    ],
+                                ],
                             ],
                         ],
                     ],
                 ], 200)
                 // Step 2: AI menerima tool_result dari database dan merangkum secara natural & komunikatif
                 ->push([
-                    'id' => 'msg_step2',
-                    'type' => 'message',
-                    'role' => 'assistant',
-                    'stop_reason' => 'end_turn',
-                    'content' => [
+                    'choices' => [
                         [
-                            'type' => 'text',
-                            'text' => 'The user asked in Indonesian. Tool result contains 3.5 hrs breakdown on bearing.',
-                        ],
-                        [
-                            'type' => 'text',
-                            'text' => "Halo Mas! Dari hasil pengecekan log SAP untuk mesin **KA-WWD-NDB-3006**, tercatat ada 1 kali breakdown pada tanggal **15 Januari 2026** dengan durasi **3,5 jam** karena bearing spindle aus.\n\nSaran teknis: Sebaiknya lakukan greasing berkala dan monitoring vibrasi setiap shift agar tidak berulang.",
+                            'message' => [
+                                'role' => 'assistant',
+                                'content' => "<think>The user asked in Indonesian. Tool result contains 3.5 hrs breakdown on bearing.</think>\n\nHalo Mas! Dari hasil pengecekan log SAP untuk mesin **KA-WWD-NDB-3006**, tercatat ada 1 kali breakdown pada tanggal **15 Januari 2026** dengan durasi **3,5 jam** karena bearing spindle aus.\n\nSaran teknis: Sebaiknya lakukan greasing berkala dan monitoring vibrasi setiap shift agar tidak berulang.",
+                            ],
                         ],
                     ],
                 ], 200),
